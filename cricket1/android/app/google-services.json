@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "430991007409",
+    "project_id": "cricket-flutter-project",
+    "storage_bucket": "cricket-flutter-project.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430991007409:android:399f0f75604c981c4c4c90",
+        "android_client_info": {
+          "package_name": "com.juggernaut.cricket1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjQSCBt7vKnjL0vhvn02IqW3KaZY7juXk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
