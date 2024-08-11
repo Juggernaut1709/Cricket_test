@@ -1,3 +1,6 @@
+import 'package:cricket1/pages/loggedin/l_homepage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart'; // Add this dependency to use Slidable
 
@@ -9,204 +12,247 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  late final TextEditingController _email;
-  late final TextEditingController _password;
+  late final TextEditingController emailController;
+  late final TextEditingController passwordController;
 
   @override
   void initState() {
-    _email = TextEditingController();
-    _password = TextEditingController();
+    emailController = TextEditingController();
+    passwordController = TextEditingController();
     super.initState();
   }
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor:
-          Color(0xff8ecae6), // Light Blue for the overall background
-      body: Stack(
-        children: [
-          // Top circle design
-          Positioned(
-            top: -80,
-            left: -60,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                color: Color(0xff023047).withOpacity(0.8), // Dark Blue
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          // Bottom circle design
-          Positioned(
-            bottom: -100,
-            right: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                color: Color(0xff219ebc).withOpacity(0.8), // Medium Blue
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          // Middle wave-like background design
-          Positioned(
-            top: 250,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 400,
-              decoration: BoxDecoration(
-                color: Color(0xffffb703).withOpacity(0.8), // Bright Yellow
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(100),
-                  topRight: Radius.circular(100),
-                ),
-              ),
-            ),
-          ),
-          // Cricket bat design
-          Positioned(
-            top: 200,
-            left: 30,
-            child: Column(
-              children: [
-                // Handle
-                Container(
-                  width: 20,
-                  height: 80,
-                  color: Color(0xff023047), // Dark Blue
-                ),
-                // Blade
-                Container(
-                  width: 60,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    color: Color(0xfffb8500), // Orange
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10),
+    return FutureBuilder(
+        future: Firebase.initializeApp(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            final user = FirebaseAuth.instance.currentUser;
+            return Scaffold(
+              backgroundColor: const Color(0xffE2BFD9), // Light Purple
+              body: Stack(
+                children: [
+                  // Top circle design
+                  Positioned(
+                    top: -80,
+                    left: -60,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff674188), // Dark Purple
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          // Slidable button to return to HomePage
-          Positioned(
-            bottom: 40,
-            left: 10,
-            right: 10,
-            child: Slidable(
-              startActionPane: ActionPane(
-                motion: ScrollMotion(),
-                children: [
-                  SlidableAction(
-                    onPressed: (context) {
-                      Navigator.pop(context); // Navigate back to HomePage
-                    },
-                    backgroundColor: Color(0xff023047), // Dark Blue
-                    foregroundColor: Colors.white,
-                    icon: Icons.arrow_back,
-                    label: 'Previous',
+                  // Bottom circle design
+                  Positioned(
+                    bottom: -100,
+                    right: -80,
+                    child: Container(
+                      width: 250,
+                      height: 250,
+                      decoration: BoxDecoration(
+                        color: const Color(0xffC8A1E0), // Light Lavender
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  // Middle wave-like background design
+                  Positioned(
+                    top: 250,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 400,
+                      decoration: BoxDecoration(
+                        color: const Color(0xffF7EFE5), // Light Cream
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(100),
+                          topRight: Radius.circular(100),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Slidable button to return to HomePage
+                  Positioned(
+                    bottom: 40,
+                    left: 10,
+                    right: 10,
+                    child: Slidable(
+                      startActionPane: ActionPane(
+                        motion: ScrollMotion(),
+                        children: [
+                          SlidableAction(
+                            onPressed: (context) {
+                              Navigator.pop(
+                                  context); // Navigate back to HomePage
+                            },
+                            backgroundColor:
+                                const Color(0xff674188), // Dark Purple
+                            foregroundColor: Colors.white,
+                            icon: Icons.arrow_back,
+                            label: 'Previous',
+                          ),
+                        ],
+                      ),
+                      child: const Text(''),
+                    ),
+                  ),
+                  SingleChildScrollView(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: 120),
+                            Text(
+                              'LOGIN',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xff674188), // Dark Purple
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 40),
+                            TextField(
+                              controller: emailController,
+                              decoration: InputDecoration(
+                                hintText: 'Email',
+                                filled: true,
+                                fillColor:
+                                    const Color(0xffF7EFE5), // Light Cream
+                                prefixIcon: Icon(Icons.email,
+                                    color:
+                                        const Color(0xff674188)), // Dark Purple
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 20, horizontal: 20),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            SizedBox(height: 20),
+                            TextField(
+                              controller: passwordController,
+                              decoration: InputDecoration(
+                                hintText: 'Password',
+                                filled: true,
+                                fillColor:
+                                    const Color(0xffF7EFE5), // Light Cream
+                                prefixIcon: Icon(Icons.lock,
+                                    color:
+                                        const Color(0xff674188)), // Dark Purple
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 20, horizontal: 20),
+                              ),
+                              obscureText: true,
+                              autocorrect: false,
+                            ),
+                            SizedBox(height: 40),
+                            TextButton(
+                              onPressed: () async {
+                                final email = emailController.text;
+                                final pword = passwordController.text;
+                                try {
+                                  final userCredential = await FirebaseAuth
+                                      .instance
+                                      .signInWithEmailAndPassword(
+                                          email: email, password: pword);
+                                  print(userCredential);
+                                  if (user?.emailVerified == false) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return const AlertDialog(
+                                          title: Text('Unverified Email'),
+                                          content: Text(
+                                              "The Email given is not verified. Please verify and try again"),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    // Navigate to HomePage after successful login
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const HomePage()),
+                                    );
+                                  }
+                                } on FirebaseAuthException catch (e) {
+                                  if (e.code == 'invalid-credential') {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return const AlertDialog(
+                                          title: Text('Invalid Credentials'),
+                                          content: Text(
+                                              "The Email or Password provided is wrong. Try Again"),
+                                        );
+                                      },
+                                    );
+                                  }
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor:
+                                    const Color(0xffC8A1E0), // Light Lavender
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                                height:
+                                    20), // Additional spacing for when the keyboard is open
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              child: const Text(''),
-            ),
-          ),
-          SingleChildScrollView(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: 120),
-                    Text(
-                      'LOGIN',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xfffb8500), // Orange
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 40),
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Email',
-                        filled: true,
-                        fillColor:
-                            Color(0xffffb703).withOpacity(0.2), // Light Yellow
-                        prefixIcon: Icon(Icons.email, color: Color(0xfffb8500)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        filled: true,
-                        fillColor:
-                            Color(0xffffb703).withOpacity(0.2), // Light Yellow
-                        prefixIcon: Icon(Icons.lock, color: Color(0xfffb8500)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                      ),
-                      obscureText: true,
-                      autocorrect: false,
-                    ),
-                    SizedBox(height: 40),
-                    TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        backgroundColor: Color(0xff219ebc), // Medium Blue
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        'Login',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                        height:
-                            20), // Additional spacing for when the keyboard is open
-                  ],
-                ),
+            );
+          } else if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text("Error initializing Firebase"),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
+            );
+          } else {
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+        });
   }
 }

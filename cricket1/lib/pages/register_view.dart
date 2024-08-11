@@ -40,7 +40,7 @@ class _RegisterViewState extends State<RegisterView> {
           // Firebase is initialized, show the registration form
           return Scaffold(
             backgroundColor:
-                Color(0xff8ecae6), // Light Blue for the overall background
+                Color(0xFFF7EFE5), // Light Cream for the overall background
             body: Stack(
               children: [
                 // Top curved background design
@@ -51,7 +51,7 @@ class _RegisterViewState extends State<RegisterView> {
                   child: Container(
                     height: 300,
                     decoration: BoxDecoration(
-                      color: Color(0xff023047).withOpacity(0.8), // Dark Blue
+                      color: Color(0xFF674188).withOpacity(0.8), // Deep Purple
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(150),
                         bottomRight: Radius.circular(150),
@@ -68,7 +68,7 @@ class _RegisterViewState extends State<RegisterView> {
                     height: 300,
                     decoration: BoxDecoration(
                       color:
-                          Color(0xffffb703).withOpacity(0.8), // Bright Yellow
+                          Color(0xFFC8A1E0).withOpacity(0.8), // Light Lavender
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -81,7 +81,7 @@ class _RegisterViewState extends State<RegisterView> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Color(0xff800000), // Maroon Red color for the ball
+                      color: Color(0xFFE2BFD9), // Light Pink for the ball
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -170,7 +170,7 @@ class _RegisterViewState extends State<RegisterView> {
                             'REGISTER',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xfffb8500), // Orange
+                              color: Color(0xFF674188), // Deep Purple
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                             ),
@@ -181,10 +181,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Email',
                               filled: true,
-                              fillColor: Color(0xffffb703)
-                                  .withOpacity(0.2), // Light Yellow
+                              fillColor: Color(0xFFC8A1E0)
+                                  .withOpacity(0.2), // Light Lavender
                               prefixIcon:
-                                  Icon(Icons.email, color: Color(0xfffb8500)),
+                                  Icon(Icons.email, color: Color(0xFF674188)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -200,10 +200,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Password',
                               filled: true,
-                              fillColor: Color(0xffffb703)
-                                  .withOpacity(0.2), // Light Yellow
+                              fillColor: Color(0xFFC8A1E0)
+                                  .withOpacity(0.2), // Light Lavender
                               prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xfffb8500)),
+                                  Icon(Icons.lock, color: Color(0xFF674188)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -221,10 +221,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Confirm Password',
                               filled: true,
-                              fillColor: Color(0xffffb703)
-                                  .withOpacity(0.2), // Light Yellow
+                              fillColor: Color(0xFFC8A1E0)
+                                  .withOpacity(0.2), // Light Lavender
                               prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xfffb8500)),
+                                  Icon(Icons.lock, color: Color(0xFF674188)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -261,7 +261,8 @@ class _RegisterViewState extends State<RegisterView> {
                                       .createUserWithEmailAndPassword(
                                           email: email, password: pword);
                                   print(userCredential);
-
+                                  await userCredential.user!
+                                      .sendEmailVerification();
                                   // Navigate to LoginView after successful registration
                                   Navigator.pushReplacement(
                                     context,
@@ -308,7 +309,7 @@ class _RegisterViewState extends State<RegisterView> {
                               }
                             },
                             style: TextButton.styleFrom(
-                              backgroundColor: Color(0xff219ebc), // Medium Blue
+                              backgroundColor: Color(0xFF674188), // Deep Purple
                               padding: EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),

@@ -3,11 +3,11 @@ import 'package:cricket1/pages/register_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart'; // Add this dependency to use Slidable
 
-class HomePage extends StatelessWidget {
+class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xff30332e), // Dark Gray background
+      backgroundColor: const Color(0xffF7EFE5), // Light background
       body: Stack(
         children: [
           // Top design - half-circle
@@ -17,8 +17,8 @@ class HomePage extends StatelessWidget {
             child: Container(
               width: 200,
               height: 200,
-              decoration: BoxDecoration(
-                color: Color(0xff62bbc1), // Light Blue
+              decoration: const BoxDecoration(
+                color: Color(0xffE2BFD9), // Soft Pink
                 shape: BoxShape.circle,
               ),
             ),
@@ -30,8 +30,8 @@ class HomePage extends StatelessWidget {
             child: Container(
               width: 250,
               height: 250,
-              decoration: BoxDecoration(
-                color: Color(0xffec058e), // Bright Pink
+              decoration: const BoxDecoration(
+                color: Color(0xffC8A1E0), // Light Purple
                 shape: BoxShape.circle,
               ),
             ),
@@ -41,21 +41,21 @@ class HomePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
+                const Text(
                   'WELCOME',
                   style: TextStyle(
-                    color: Color(0xfffffbfc), // Off-White
+                    color: Color(0xff674188), // Deep Purple
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2,
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30.0),
                   child: Slidable(
                     startActionPane: ActionPane(
-                      motion: ScrollMotion(),
+                      motion: const ScrollMotion(),
                       children: [
                         SlidableAction(
                           onPressed: (context) {
@@ -65,7 +65,7 @@ class HomePage extends StatelessWidget {
                                   builder: (context) => const LoginView()),
                             );
                           },
-                          backgroundColor: Color(0xffec058e), // Bright Pink
+                          backgroundColor: const Color(0xffE2BFD9), // Soft Pink
                           foregroundColor: Colors.white,
                           icon: Icons.login,
                           label: 'Login',
@@ -74,9 +74,9 @@ class HomePage extends StatelessWidget {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Color(0xff62bbc1), // Light Blue
+                        color: const Color(0xffC8A1E0), // Light Purple
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black26,
                             blurRadius: 10,
@@ -84,12 +84,12 @@ class HomePage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: ListTile(
+                      child: const ListTile(
                         title: Center(
                           child: Text(
                             'Go to Login',
                             style: TextStyle(
-                              color: Color(0xff010400), // Dark Green
+                              color: Color(0xff674188), // Deep Purple
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -99,12 +99,12 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30.0),
                   child: Slidable(
                     startActionPane: ActionPane(
-                      motion: ScrollMotion(),
+                      motion: const ScrollMotion(),
                       children: [
                         SlidableAction(
                           onPressed: (context) {
@@ -114,7 +114,7 @@ class HomePage extends StatelessWidget {
                                   builder: (context) => const RegisterView()),
                             );
                           },
-                          backgroundColor: Color(0xff62bbc1), // Light Blue
+                          backgroundColor: const Color(0xffE2BFD9), // Soft Pink
                           foregroundColor: Colors.white,
                           icon: Icons.app_registration,
                           label: 'Register',
@@ -123,9 +123,9 @@ class HomePage extends StatelessWidget {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Color(0xffec058e), // Bright Pink
+                        color: const Color(0xffC8A1E0), // Light Purple
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black26,
                             blurRadius: 10,
@@ -133,12 +133,12 @@ class HomePage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: ListTile(
+                      child: const ListTile(
                         title: Center(
                           child: Text(
                             'Go to Register',
                             style: TextStyle(
-                              color: Color(0xfffffbfc), // Off-White
+                              color: Color(0xff674188), // Deep Purple
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),

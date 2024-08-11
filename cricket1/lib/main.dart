@@ -1,8 +1,5 @@
-import 'package:cricket1/firebase_options.dart';
 import 'package:cricket1/pages/home_view.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,7 +42,7 @@ class MyApp extends StatelessWidget {
             seedColor: const Color.fromRGBO(255, 173, 96, 0.2)),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: HomeView(),
     );
   }
 }
