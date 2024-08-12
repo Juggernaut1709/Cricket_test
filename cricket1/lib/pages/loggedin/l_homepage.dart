@@ -1,3 +1,5 @@
+import 'package:cricket1/pages/loggedin/l_rankingpage.dart';
+import 'package:cricket1/pages/loggedin/l_settingspage.dart';
 import 'package:cricket1/pages/loggedin/match/create.dart';
 import 'package:cricket1/pages/loggedin/match/join.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,16 @@ class HomePage extends StatelessWidget {
                   onSelected: (item) {
                     if (item == 2) {
                       Navigator.of(context).pop(); // Go back on Sign Out
+                    } else if (item == 1) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SettingsPage()),
+                      );
+                    } else if (item == 0) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => RankingPage()),
+                      );
                     }
                   },
                   itemBuilder: (context) => [
