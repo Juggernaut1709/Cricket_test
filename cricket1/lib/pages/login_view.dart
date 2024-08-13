@@ -229,6 +229,14 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                             ),
+                            TextButton(
+                              onPressed: () {
+                                // Navigate to RegisterView
+                                Navigator.pushNamed(context, '/register');
+                              },
+                              child: const Text(
+                                  "Don't have an account? Register here"),
+                            ),
                             const SizedBox(
                                 height:
                                     20), // Additional spacing for when the keyboard is open

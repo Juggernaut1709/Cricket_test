@@ -324,6 +324,14 @@ class _RegisterViewState extends State<RegisterView> {
                               ),
                             ),
                           ),
+                          TextButton(
+                            onPressed: () {
+                              // Navigate to RegisterView
+                              Navigator.pushNamed(context, '/login');
+                            },
+                            child: const Text(
+                                "Already have an account? Login here."),
+                          ),
                           SizedBox(
                               height:
                                   20), // Additional spacing for when the keyboard is open

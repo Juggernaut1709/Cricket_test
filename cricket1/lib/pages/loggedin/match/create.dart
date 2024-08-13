@@ -71,7 +71,7 @@ class _CreatePageState extends State<CreatePage> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             uniqueNumber.isEmpty
                 ? CircularProgressIndicator(
