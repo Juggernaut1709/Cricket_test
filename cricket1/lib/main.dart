@@ -1,4 +1,3 @@
-import 'package:cricket1/pages/home_view.dart';
 import 'package:cricket1/pages/login_view.dart';
 import 'package:cricket1/pages/register_view.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +44,7 @@ class MyApp extends StatelessWidget {
             seedColor: const Color.fromRGBO(255, 173, 96, 0.2)),
         useMaterial3: true,
       ),
-      home: HomeView(),
+      home: const LoginView(),
       routes: {
         '/login': (context) => const LoginView(),
         '/register': (context) => const RegisterView(),
