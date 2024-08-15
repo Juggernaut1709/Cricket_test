@@ -14,14 +14,16 @@ class HomePage extends StatelessWidget {
         children: [
           // Container to replace AppBar
           Container(
-            color: const Color(0xFF694F8E), // New color for the Container
+            color:
+                const Color.fromARGB(255, 33, 33, 33), // Dark background color
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Row(
               children: [
                 // Menu on the left
                 PopupMenuButton<int>(
-                  icon: const Icon(Icons.menu, color: Color(0xFFFBF9F6)),
-                  color: const Color(0xFFFBF9F6),
+                  icon: const Icon(Icons.menu,
+                      color: Color(0xFF14FFEC)), // Bright color for the icon
+                  color: const Color(0xFF14FFEC), // Bright color for the menu
                   onSelected: (item) {
                     if (item == 2) {
                       Navigator.of(context).pop(); // Go back on Sign Out
@@ -42,9 +44,13 @@ class HomePage extends StatelessWidget {
                       value: 0,
                       child: Row(
                         children: const [
-                          Icon(Icons.leaderboard, color: Color(0xFFE3A5C7)),
+                          Icon(Icons.leaderboard,
+                              color: Color(
+                                  0xFF0D7377)), // Teal color for the icons
                           SizedBox(width: 8),
-                          Text("Ranking"),
+                          Text("Ranking",
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 33, 33, 33))),
                         ],
                       ),
                     ),
@@ -52,9 +58,11 @@ class HomePage extends StatelessWidget {
                       value: 1,
                       child: Row(
                         children: const [
-                          Icon(Icons.settings, color: Color(0xFFE3A5C7)),
+                          Icon(Icons.settings, color: Color(0xFF0D7377)),
                           SizedBox(width: 8),
-                          Text("Settings"),
+                          Text("Settings",
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 33, 33, 33))),
                         ],
                       ),
                     ),
@@ -62,9 +70,11 @@ class HomePage extends StatelessWidget {
                       value: 2,
                       child: Row(
                         children: const [
-                          Icon(Icons.logout, color: Color(0xFFE3A5C7)),
+                          Icon(Icons.logout, color: Color(0xFF0D7377)),
                           SizedBox(width: 8),
-                          Text("Sign Out"),
+                          Text("Sign Out",
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 33, 33, 33))),
                         ],
                       ),
                     ),
@@ -76,7 +86,7 @@ class HomePage extends StatelessWidget {
                     child: const Text(
                       'HOME',
                       style: TextStyle(
-                        color: Color(0xFFFBF9F6),
+                        color: Color(0xFF14FFEC), // Bright color for the title
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -92,7 +102,8 @@ class HomePage extends StatelessWidget {
               children: [
                 Expanded(
                   child: Container(
-                    color: const Color(0xFF674188), // Updated top section color
+                    color: const Color.fromARGB(
+                        255, 50, 50, 50), // Slightly lighter dark color
                     child: Stack(
                       children: [
                         Center(
@@ -105,8 +116,8 @@ class HomePage extends StatelessWidget {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFFB692C2), // Button color
+                              backgroundColor: const Color(
+                                  0xFF0D7377), // Teal color for the button
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 50, vertical: 20),
                               shape: RoundedRectangleBorder(
@@ -116,7 +127,8 @@ class HomePage extends StatelessWidget {
                             child: const Text(
                               'CREATE',
                               style: TextStyle(
-                                color: Color(0xFFFBF9F6), // Text color
+                                color: Color(
+                                    0xFF14FFEC), // Bright color for the text
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -129,8 +141,8 @@ class HomePage extends StatelessWidget {
                 ),
                 Expanded(
                   child: Container(
-                    color:
-                        const Color(0xFFC8A1E0), // Updated bottom section color
+                    color: const Color.fromARGB(
+                        255, 33, 33, 33), // Dark color for the bottom section
                     child: Stack(
                       children: [
                         Center(
@@ -143,8 +155,8 @@ class HomePage extends StatelessWidget {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFFE2BFD9), // Button color
+                              backgroundColor: const Color(
+                                  0xFF14FFEC), // Bright color for the button
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 50, vertical: 20),
                               shape: RoundedRectangleBorder(
@@ -154,7 +166,8 @@ class HomePage extends StatelessWidget {
                             child: const Text(
                               'JOIN',
                               style: TextStyle(
-                                color: Color(0xFFFBF9F6), // Text color
+                                color: Color(
+                                    0xFF0D7377), // Teal color for the text
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -40,7 +40,7 @@ class _RegisterViewState extends State<RegisterView> {
           // Firebase is initialized, show the registration form
           return Scaffold(
             backgroundColor:
-                Color(0xFFF7EFE5), // Light Cream for the overall background
+                Color(0xFF212121), // Dark Gray for the overall background
             body: Stack(
               children: [
                 // Top curved background design
@@ -51,7 +51,7 @@ class _RegisterViewState extends State<RegisterView> {
                   child: Container(
                     height: 300,
                     decoration: BoxDecoration(
-                      color: Color(0xFF674188).withOpacity(0.8), // Deep Purple
+                      color: Color(0xFF0D7377), // Teal
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(150),
                         bottomRight: Radius.circular(150),
@@ -67,8 +67,7 @@ class _RegisterViewState extends State<RegisterView> {
                     width: 300,
                     height: 300,
                     decoration: BoxDecoration(
-                      color:
-                          Color(0xFFC8A1E0).withOpacity(0.8), // Light Lavender
+                      color: Color(0xFF141414), // Very Dark Gray
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -81,7 +80,7 @@ class _RegisterViewState extends State<RegisterView> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Color(0xFFE2BFD9), // Light Pink for the ball
+                      color: Color(0xFF14FFEC), // Aqua for the ball
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -170,7 +169,7 @@ class _RegisterViewState extends State<RegisterView> {
                             'REGISTER',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF674188), // Deep Purple
+                              color: Color(0xFF0D7377), // Teal
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                             ),
@@ -181,10 +180,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Email',
                               filled: true,
-                              fillColor: Color(0xFFC8A1E0)
-                                  .withOpacity(0.2), // Light Lavender
+                              fillColor: Color(0xFF141414)
+                                  .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
-                                  Icon(Icons.email, color: Color(0xFF674188)),
+                                  Icon(Icons.email, color: Color(0xFF0D7377)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -200,10 +199,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Password',
                               filled: true,
-                              fillColor: Color(0xFFC8A1E0)
-                                  .withOpacity(0.2), // Light Lavender
+                              fillColor: Color(0xFF141414)
+                                  .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xFF674188)),
+                                  Icon(Icons.lock, color: Color(0xFF0D7377)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -221,10 +220,10 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Confirm Password',
                               filled: true,
-                              fillColor: Color(0xFFC8A1E0)
-                                  .withOpacity(0.2), // Light Lavender
+                              fillColor: Color(0xFF141414)
+                                  .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xFF674188)),
+                                  Icon(Icons.lock, color: Color(0xFF0D7377)),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
@@ -309,7 +308,7 @@ class _RegisterViewState extends State<RegisterView> {
                               }
                             },
                             style: TextButton.styleFrom(
-                              backgroundColor: Color(0xFF674188), // Deep Purple
+                              backgroundColor: Color(0xFF0D7377), // Teal
                               padding: EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -326,7 +325,7 @@ class _RegisterViewState extends State<RegisterView> {
                           ),
                           TextButton(
                             onPressed: () {
-                              // Navigate to RegisterView
+                              // Navigate to LoginView
                               Navigator.pushNamed(context, '/login');
                             },
                             child: const Text(

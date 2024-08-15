@@ -37,7 +37,8 @@ class _LoginViewState extends State<LoginView> {
           if (snapshot.connectionState == ConnectionState.done) {
             final user = FirebaseAuth.instance.currentUser;
             return Scaffold(
-              backgroundColor: const Color(0xffE2BFD9), // Light Purple
+              backgroundColor:
+                  const Color.fromRGBO(50, 50, 50, 1.0), // Medium Grey
               body: Stack(
                 children: [
                   // Top circle design
@@ -48,7 +49,7 @@ class _LoginViewState extends State<LoginView> {
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
-                        color: const Color(0xff674188), // Dark Purple
+                        color: const Color.fromRGBO(13, 115, 119, 1.0), // Teal
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -61,7 +62,7 @@ class _LoginViewState extends State<LoginView> {
                       width: 250,
                       height: 250,
                       decoration: BoxDecoration(
-                        color: const Color(0xffC8A1E0), // Light Lavender
+                        color: const Color.fromRGBO(20, 255, 236, 1.0), // Cyan
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -74,8 +75,9 @@ class _LoginViewState extends State<LoginView> {
                     child: Container(
                       height: 400,
                       decoration: BoxDecoration(
-                        color: const Color(0xffF7EFE5), // Light Cream
-                        borderRadius: BorderRadius.only(
+                        color:
+                            const Color.fromRGBO(33, 33, 33, 1.0), // Dark Grey
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(100),
                           topRight: Radius.circular(100),
                         ),
@@ -97,7 +99,7 @@ class _LoginViewState extends State<LoginView> {
                                   context); // Navigate back to HomePage
                             },
                             backgroundColor:
-                                const Color(0xff674188), // Dark Purple
+                                const Color.fromRGBO(13, 115, 119, 1.0), // Teal
                             foregroundColor: Colors.white,
                             icon: Icons.arrow_back,
                             label: 'Previous',
@@ -115,58 +117,59 @@ class _LoginViewState extends State<LoginView> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SizedBox(height: 120),
+                            const SizedBox(height: 120),
                             Text(
                               'LOGIN',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: const Color(0xff674188), // Dark Purple
+                                color: const Color.fromRGBO(
+                                    13, 115, 119, 1.0), // Teal
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 40),
+                            const SizedBox(height: 40),
                             TextField(
                               controller: emailController,
                               decoration: InputDecoration(
                                 hintText: 'Email',
                                 filled: true,
-                                fillColor:
-                                    const Color(0xffF7EFE5), // Light Cream
+                                fillColor: Color.fromARGB(
+                                    255, 255, 254, 254), // Dark Grey
                                 prefixIcon: Icon(Icons.email,
-                                    color:
-                                        const Color(0xff674188)), // Dark Purple
+                                    color: const Color.fromRGBO(
+                                        13, 115, 119, 1.0)), // Teal
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 20),
                               ),
                               keyboardType: TextInputType.emailAddress,
                             ),
-                            SizedBox(height: 20),
+                            const SizedBox(height: 20),
                             TextField(
                               controller: passwordController,
                               decoration: InputDecoration(
                                 hintText: 'Password',
                                 filled: true,
-                                fillColor:
-                                    const Color(0xffF7EFE5), // Light Cream
+                                fillColor: Color.fromARGB(
+                                    255, 242, 240, 240), // Dark Grey
                                 prefixIcon: Icon(Icons.lock,
-                                    color:
-                                        const Color(0xff674188)), // Dark Purple
+                                    color: const Color.fromRGBO(
+                                        13, 115, 119, 1.0)), // Teal
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 20),
                               ),
                               obscureText: true,
                               autocorrect: false,
                             ),
-                            SizedBox(height: 40),
+                            const SizedBox(height: 40),
                             TextButton(
                               onPressed: () async {
                                 final email = emailController.text;
@@ -213,9 +216,10 @@ class _LoginViewState extends State<LoginView> {
                                 }
                               },
                               style: TextButton.styleFrom(
-                                backgroundColor:
-                                    const Color(0xffC8A1E0), // Light Lavender
-                                padding: EdgeInsets.symmetric(vertical: 20),
+                                backgroundColor: const Color.fromRGBO(
+                                    13, 115, 119, 1.0), // Teal
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -249,13 +253,13 @@ class _LoginViewState extends State<LoginView> {
               ),
             );
           } else if (snapshot.hasError) {
-            return Scaffold(
+            return const Scaffold(
               body: Center(
                 child: Text("Error initializing Firebase"),
               ),
             );
           } else {
-            return Scaffold(
+            return const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),
               ),
