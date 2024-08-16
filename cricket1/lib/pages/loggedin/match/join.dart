@@ -1,126 +1,128 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-class JoinPage extends StatefulWidget {
-  const JoinPage({super.key});
+class JoinRoom extends StatefulWidget {
+  const JoinRoom({Key? key}) : super(key: key);
 
   @override
-  _JoinPageState createState() => _JoinPageState();
+  _JoinRoomState createState() => _JoinRoomState();
 }
 
-class _JoinPageState extends State<JoinPage> {
-  final TextEditingController numberController = TextEditingController();
-  late FirebaseFirestore firestore;
+class _JoinRoomState extends State<JoinRoom> {
+  final TextEditingController _roomIdController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  @override
-  void initState() {
-    super.initState();
-    firestore = FirebaseFirestore.instance;
-  }
+  bool _isJoining = false;
+  String _errorMessage = '';
 
-  void joinSession() async {
-    final number = numberController.text;
+  Future<void> joinRoom() async {
+    setState(() {
+      _isJoining = true;
+      _errorMessage = '';
+    });
 
-    // Check if the document with the unique number exists
-    final doc = await firestore.collection('sync').doc(number).get();
+    final user = _auth.currentUser;
+    final roomId = _roomIdController.text.trim();
 
-    if (doc.exists) {
-      // Update the 'joined' field to true
-      await firestore.collection('sync').doc(number).update({
-        'joined': true,
+    if (roomId.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a room ID.';
+        _isJoining = false;
       });
-
-      // Navigate to the connected page or show a success message
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => const AnotherPage()));
-    } else {
-      // Show error if the number is invalid
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Invalid Number!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+      return;
     }
+
+    final roomRef = FirebaseDatabase.instance.ref('rooms/$roomId');
+
+    // Check if the room exists
+    final roomSnapshot = await roomRef.get();
+    if (!roomSnapshot.exists) {
+      setState(() {
+        _errorMessage = 'Room ID does not exist.';
+        _isJoining = false;
+      });
+      return;
+    }
+
+    // Check if the room already has a second player
+    final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
+    if (roomData['player2Id'] != null) {
+      setState(() {
+        _errorMessage = 'Room is already full.';
+        _isJoining = false;
+      });
+      return;
+    }
+
+    // Set player2Id and start the game
+    await roomRef.update({
+      'player2Id': user?.uid,
+      'status': 'in_progress',
+    });
+
+    // Navigate to the game screen
+    Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xff694F8E),
+        backgroundColor: const Color.fromRGBO(33, 33, 33, 1),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xffF7EFE5)),
+          icon: const Icon(Icons.arrow_back,
+              color: Color.fromRGBO(20, 255, 236, 1)),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text(
-          'Join',
-          style: TextStyle(
-            color: Color(0xffF7EFE5),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Join Room',
+            style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1))),
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
-                controller: numberController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter Unique Number',
+                controller: _roomIdController,
+                decoration: InputDecoration(
+                  labelText: 'Enter Room ID',
                   border: OutlineInputBorder(),
                 ),
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: joinSession,
+                onPressed: _isJoining ? null : joinRoom,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff674188),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text(
-                  'JOIN',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
+                  backgroundColor: const Color.fromRGBO(13, 115, 119, 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                child: _isJoining
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Join Room', style: TextStyle(fontSize: 18)),
               ),
+              if (_errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Text(
+                    _errorMessage,
+                    style: const TextStyle(
+                        color: Color.fromARGB(255, 235, 38, 24), fontSize: 16),
+                  ),
+                ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class AnotherPage extends StatelessWidget {
-  const AnotherPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connected'),
-      ),
-      body: const Center(
-        child: Text('You are now connected!'),
-      ),
+      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
     );
   }
 }

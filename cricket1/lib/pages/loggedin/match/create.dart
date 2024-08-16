@@ -1,109 +1,123 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
 
-class CreatePage extends StatefulWidget {
-  const CreatePage({super.key});
+class CreateRoom extends StatefulWidget {
+  final int balls;
+
+  const CreateRoom({
+    Key? key,
+    required this.balls, // Accept balls as a required parameter
+  }) : super(key: key);
 
   @override
-  _CreatePageState createState() => _CreatePageState();
+  _CreateRoomState createState() => _CreateRoomState();
 }
 
-class _CreatePageState extends State<CreatePage> {
-  late String uniqueNumber;
-  late FirebaseFirestore firestore;
+class _CreateRoomState extends State<CreateRoom> {
+  late String roomId;
+  late DatabaseReference roomRef;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    firestore = FirebaseFirestore.instance;
-    generateUniqueNumber();
+    createRoom();
   }
 
-  void generateUniqueNumber() async {
-    final milliseconds = DateTime.now().millisecondsSinceEpoch;
-    final random = Random().nextInt(999); // Add randomness to ensure uniqueness
-    uniqueNumber = '$milliseconds$random';
+  void dispose() {
+    // Remove the room when the user leaves the page
+    roomRef.remove();
+    super.dispose();
+  }
 
-    // Save the unique number to Firestore
-    await firestore.collection('sync').doc(uniqueNumber).set({
-      'joined': false,
+  void createRoom() async {
+    // Generate a unique room ID based on the current time and a random number
+    final milliseconds = DateTime.now().millisecondsSinceEpoch;
+    final random = Random().nextInt(999);
+    roomId = '$milliseconds$random';
+
+    // Get the current user ID
+    final user = FirebaseAuth.instance.currentUser;
+    final player1Id = user?.uid;
+
+    // Reference to the room in Firebase
+    roomRef = FirebaseDatabase.instance.ref('rooms/$roomId');
+
+    // Set initial room data
+    await roomRef.set({
+      'player1Id': player1Id,
+      'player2Id': null,
+      'batsmanId': null,
+      'bowlerId': null,
+      'ballCount': widget.balls,
+      'runsPlayer1': 0,
+      'runsPlayer2': 0,
+      'batsmanChoice': null,
+      'bowlerChoice': null,
+      'status': 'waiting',
     });
 
-    // Listen for changes to the document
-    firestore
-        .collection('sync')
-        .doc(uniqueNumber)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.exists && snapshot.data()?['joined'] == true) {
-        // Navigate to another page or show a message when the JOIN is successful
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => const AnotherPage()));
+    // Set loading to false after room creation
+    setState(() {
+      isLoading = false;
+    });
+
+    // Listen for the second player joining
+    roomRef.child('player2Id').onValue.listen((event) {
+      if (event.snapshot.value != null) {
+        // Player 2 has joined, start the game
+        startGame();
       }
     });
+  }
 
-    // Simulate a loading delay
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {});
+  void startGame() {
+    // Assign roles randomly
+    final user = FirebaseAuth.instance.currentUser;
+    final bool isBatsman = Random().nextBool();
+
+    roomRef.update({
+      'batsmanId': isBatsman ? user?.uid : roomRef.child('player2Id').get(),
+      'bowlerId': isBatsman ? roomRef.child('player2Id').get() : user?.uid,
+      'status': 'in_progress',
     });
+
+    // Navigate to the game screen
+    Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xff694F8E),
+        backgroundColor: const Color.fromRGBO(33, 33, 33, 1),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xffF7EFE5)),
+          icon: const Icon(Icons.arrow_back,
+              color: Color.fromRGBO(20, 255, 236, 1)),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text(
-          'Create',
-          style: TextStyle(
-            color: Color(0xffF7EFE5),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Create Room',
+            style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1))),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            uniqueNumber.isEmpty
-                ? CircularProgressIndicator(
-                    color: const Color(0xff674188),
-                  )
-                : Text(
-                    'Your Unique Number: $uniqueNumber',
-                    style: const TextStyle(
-                      color: Color(0xff674188),
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-          ],
-        ),
+        child: isLoading
+            ? CircularProgressIndicator(
+                color: const Color.fromRGBO(13, 115, 119, 1))
+            : Text(
+                'Room ID: $roomId\nWaiting for another player to join...',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color.fromRGBO(13, 115, 119, 1),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
-    );
-  }
-}
-
-class AnotherPage extends StatelessWidget {
-  const AnotherPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connected'),
-      ),
-      body: const Center(
-        child: Text('You are now connected!'),
-      ),
+      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
     );
   }
 }

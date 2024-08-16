@@ -4,8 +4,45 @@ import 'package:cricket1/pages/loggedin/match/create.dart';
 import 'package:cricket1/pages/loggedin/match/join.dart';
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int? selectedBalls;
+
+  void _createRoom() {
+    if (selectedBalls == null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Error"),
+            content: const Text(
+                "Number of balls must be specified before creating the room."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateRoom(balls: selectedBalls!),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,9 +118,9 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
                 // Centered title
-                Expanded(
+                const Expanded(
                   child: Center(
-                    child: const Text(
+                    child: Text(
                       'HOME',
                       style: TextStyle(
                         color: Color(0xFF14FFEC), // Bright color for the title
@@ -106,34 +143,44 @@ class HomePage extends StatelessWidget {
                         255, 50, 50, 50), // Slightly lighter dark color
                     child: Stack(
                       children: [
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const CreatePage()),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                  0xFF0D7377), // Teal color for the button
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 50, vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Buttons for 20, 50, 100
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildBallButton(20),
+                                const SizedBox(width: 10),
+                                _buildBallButton(50),
+                                const SizedBox(width: 10),
+                                _buildBallButton(100),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            // CREATE button
+                            ElevatedButton(
+                              onPressed: _createRoom,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(
+                                    0xFF0D7377), // Teal color for the button
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 50, vertical: 20),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                'CREATE',
+                                style: TextStyle(
+                                  color: Color(
+                                      0xFF14FFEC), // Bright color for the text
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            child: const Text(
-                              'CREATE',
-                              style: TextStyle(
-                                color: Color(
-                                    0xFF14FFEC), // Bright color for the text
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -151,7 +198,7 @@ class HomePage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const JoinPage()),
+                                    builder: (context) => const JoinRoom()),
                               );
                             },
                             style: ElevatedButton.styleFrom(
@@ -182,6 +229,32 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBallButton(int value) {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          selectedBalls = value;
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: selectedBalls == value
+            ? const Color(0xFF14FFEC)
+            : const Color(0xFF0D7377), // Toggle colors
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: Text(
+        '$value',
+        style: const TextStyle(
+          color: Color(0xFF02111B), // Text color
+          fontSize: 20,
+        ),
       ),
     );
   }

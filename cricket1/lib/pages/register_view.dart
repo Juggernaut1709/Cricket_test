@@ -180,7 +180,7 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Email',
                               filled: true,
-                              fillColor: Color(0xFF141414)
+                              fillColor: Color.fromARGB(255, 255, 255, 255)
                                   .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
                                   Icon(Icons.email, color: Color(0xFF0D7377)),
@@ -199,7 +199,7 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Password',
                               filled: true,
-                              fillColor: Color(0xFF141414)
+                              fillColor: Color.fromARGB(255, 255, 255, 255)
                                   .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
                                   Icon(Icons.lock, color: Color(0xFF0D7377)),
@@ -220,7 +220,7 @@ class _RegisterViewState extends State<RegisterView> {
                             decoration: InputDecoration(
                               hintText: 'Confirm Password',
                               filled: true,
-                              fillColor: Color(0xFF141414)
+                              fillColor: Color.fromARGB(255, 255, 255, 255)
                                   .withOpacity(0.2), // Very Dark Gray
                               prefixIcon:
                                   Icon(Icons.lock, color: Color(0xFF0D7377)),
