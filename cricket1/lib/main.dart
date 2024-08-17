@@ -1,3 +1,4 @@
+import 'package:cricket1/pages/loggedin/match/game.dart';
 import 'package:cricket1/pages/login_view.dart';
 import 'package:cricket1/pages/register_view.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,11 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginView(),
         '/register': (context) => const RegisterView(),
+        '/game': (context) {
+          final String roomId =
+              ModalRoute.of(context)!.settings.arguments as String;
+          return GameScreen(roomId: roomId);
+        },
       },
     );
   }

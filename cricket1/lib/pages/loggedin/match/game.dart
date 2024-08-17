@@ -40,29 +40,35 @@ class _GameScreenState extends State<GameScreen> {
     final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
 
     setState(() {
-      _batsmanId = roomData['batsmanId'];
-      _bowlerId = roomData['bowlerId'];
-      _ballCount = roomData['ballCount'];
-      _runsPlayer1 = roomData['runsPlayer1'];
-      _runsPlayer2 = roomData['runsPlayer2'];
+      _batsmanId = roomData['batsmanId'] ?? '';
+      _bowlerId = roomData['bowlerId'] ?? '';
+      _ballCount = roomData['ballCount'] ?? 0;
+      _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+      _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
       _batsmanChoice = roomData['batsmanChoice'] ?? '';
       _bowlerChoice = roomData['bowlerChoice'] ?? '';
       _status = roomData['status'] ?? 'waiting';
     });
 
+    print(
+        'Room Data: $_batsmanId, $_bowlerId, $_ballCount, $_status'); // Debugging
+
     // Listen for changes to the game state
     roomRef.onValue.listen((event) {
       final updatedData = event.snapshot.value as Map<dynamic, dynamic>;
       setState(() {
-        _batsmanId = updatedData['batsmanId'];
-        _bowlerId = updatedData['bowlerId'];
-        _ballCount = updatedData['ballCount'];
-        _runsPlayer1 = updatedData['runsPlayer1'];
-        _runsPlayer2 = updatedData['runsPlayer2'];
+        _batsmanId = updatedData['batsmanId'] ?? '';
+        _bowlerId = updatedData['bowlerId'] ?? '';
+        _ballCount = updatedData['ballCount'] ?? 0;
+        _runsPlayer1 = updatedData['runsPlayer1'] ?? 0;
+        _runsPlayer2 = updatedData['runsPlayer2'] ?? 0;
         _batsmanChoice = updatedData['batsmanChoice'] ?? '';
         _bowlerChoice = updatedData['bowlerChoice'] ?? '';
         _status = updatedData['status'] ?? 'waiting';
       });
+
+      print(
+          'Updated Room Data: $_batsmanId, $_bowlerId, $_ballCount, $_status'); // Debugging
     });
   }
 
@@ -77,16 +83,13 @@ class _GameScreenState extends State<GameScreen> {
     final currentUserId = _auth.currentUser!.uid;
 
     if (currentUserId == _batsmanId) {
-      await roomRef.update({
-        'batsmanChoice': choice,
-      });
+      await roomRef.update({'batsmanChoice': choice});
     } else if (currentUserId == _bowlerId) {
-      await roomRef.update({
-        'bowlerChoice': choice,
-      });
+      await roomRef.update({'bowlerChoice': choice});
     }
 
-    // Wait for both choices to be made or for the timeout
+    print('User Choice Updated: $choice'); // Debugging
+
     await Future.delayed(const Duration(seconds: 3), () async {
       final snapshot = await roomRef.get();
       final data = snapshot.value as Map<dynamic, dynamic>;
@@ -94,19 +97,19 @@ class _GameScreenState extends State<GameScreen> {
       final batsmanChoice = data['batsmanChoice'];
       final bowlerChoice = data['bowlerChoice'];
 
+      print(
+          'Batsman Choice: $batsmanChoice, Bowler Choice: $bowlerChoice'); // Debugging
+
       if (batsmanChoice != null && bowlerChoice != null) {
         _resolveChoices(batsmanChoice, bowlerChoice);
       } else {
-        // Randomly choose if the player didn't choose in time
         if (batsmanChoice == null) {
-          await roomRef.update({
-            'batsmanChoice': (Random().nextInt(6) + 1).toString(),
-          });
+          await roomRef
+              .update({'batsmanChoice': (Random().nextInt(6) + 1).toString()});
         }
         if (bowlerChoice == null) {
-          await roomRef.update({
-            'bowlerChoice': (Random().nextInt(6) + 1).toString(),
-          });
+          await roomRef
+              .update({'bowlerChoice': (Random().nextInt(6) + 1).toString()});
         }
 
         final updatedData =

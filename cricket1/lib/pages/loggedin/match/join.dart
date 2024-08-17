@@ -62,7 +62,7 @@ class _JoinRoomState extends State<JoinRoom> {
     });
 
     // Navigate to the game screen
-    Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
+    Navigator.pushNamed(context, '/game', arguments: roomId);
   }
 
   @override
