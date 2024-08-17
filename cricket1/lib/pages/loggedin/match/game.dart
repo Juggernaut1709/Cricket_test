@@ -67,7 +67,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _makeChoice(String choice) async {
-    if (_isChoosing) return;
+    if (_isChoosing || _status != 'in_progress') return;
 
     setState(() {
       _isChoosing = true;
@@ -100,12 +100,12 @@ class _GameScreenState extends State<GameScreen> {
         // Randomly choose if the player didn't choose in time
         if (batsmanChoice == null) {
           await roomRef.update({
-            'batsmanChoice': Random().nextInt(6) + 1,
+            'batsmanChoice': (Random().nextInt(6) + 1).toString(),
           });
         }
         if (bowlerChoice == null) {
           await roomRef.update({
-            'bowlerChoice': Random().nextInt(6) + 1,
+            'bowlerChoice': (Random().nextInt(6) + 1).toString(),
           });
         }
 
@@ -130,7 +130,11 @@ class _GameScreenState extends State<GameScreen> {
         'batsmanChoice': null,
         'bowlerChoice': null,
         'runs${currentUserId == _batsmanId ? 'Player1' : 'Player2'}': runs + 0,
+        'status': 'out',
       });
+
+      // Display "OUT" screen
+      _showOutScreen();
     } else {
       // Batsman scores a run
       final runs = _currentUserId == _batsmanId ? _runsPlayer1 : _runsPlayer2;
@@ -139,22 +143,59 @@ class _GameScreenState extends State<GameScreen> {
         'batsmanChoice': null,
         'bowlerChoice': null,
         'runs${_currentUserId == _batsmanId ? 'Player1' : 'Player2'}': runs + 1,
+        'status': 'in_progress',
       });
     }
 
     // Check if 20 balls are done
     if (_ballCount <= 1) {
-      // Swap roles
+      // Swap roles or end the game
+      final newStatus = _status == 'completed' ? 'completed' : 'waiting';
       await roomRef.update({
         'batsmanId': _bowlerId,
         'bowlerId': _batsmanId,
         'ballCount': 20,
+        'status': newStatus,
       });
     }
 
     setState(() {
       _isChoosing = false;
     });
+  }
+
+  void _showOutScreen() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+          content: const Text(
+            'OUT!',
+            style: TextStyle(
+              color: Color.fromRGBO(20, 255, 236, 1),
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Continue the game
+              },
+              child: const Text(
+                'Continue',
+                style: TextStyle(
+                  color: Color.fromRGBO(13, 115, 119, 1),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -174,6 +215,12 @@ class _GameScreenState extends State<GameScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
+                'Status: $_status',
+                style: const TextStyle(
+                    fontSize: 20, color: Color.fromRGBO(20, 255, 236, 1)),
+              ),
+              const SizedBox(height: 20),
+              Text(
                 'Balls Left: $_ballCount',
                 style: const TextStyle(
                     fontSize: 20, color: Color.fromRGBO(20, 255, 236, 1)),
@@ -190,39 +237,46 @@ class _GameScreenState extends State<GameScreen> {
                     fontSize: 18, color: Color.fromRGBO(20, 255, 236, 1)),
               ),
               const SizedBox(height: 20),
-              if (isBatsman)
-                _buildChoiceButtons()
+              if (_status == 'in_progress')
+                if (isBatsman)
+                  _buildChoiceButtons(isBatsman: true)
+                else
+                  _buildChoiceButtons(isBatsman: false)
               else
-                Text(
-                  'Waiting for the batsman to make a choice...',
-                  style: const TextStyle(
-                      fontSize: 18, color: Color.fromRGBO(20, 255, 236, 1)),
+                const Text(
+                  'Waiting for the game to start...',
+                  style: TextStyle(
+                      fontSize: 16, color: Color.fromRGBO(20, 255, 236, 1)),
                 ),
             ],
           ),
         ),
       ),
-      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
     );
   }
 
-  Widget _buildChoiceButtons() {
+  Widget _buildChoiceButtons({required bool isBatsman}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(6, (index) {
-        final choice = (index + 1).toString();
-        return ElevatedButton(
-          onPressed: _isChoosing ? null : () => _makeChoice(choice),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(13, 115, 119, 1),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromRGBO(13, 115, 119, 1),
+            ),
+            onPressed: () {
+              if (_isChoosing) return;
+              _makeChoice((index + 1).toString());
+            },
+            child: Text(
+              '${index + 1}',
+              style: const TextStyle(
+                color: Color(0xFF02111b),
+                fontSize: 18,
+              ),
             ),
           ),
-          child: Text(choice,
-              style: const TextStyle(
-                  fontSize: 18, color: Color.fromRGBO(20, 255, 236, 1))),
         );
       }),
     );
