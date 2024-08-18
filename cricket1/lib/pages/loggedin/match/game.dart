@@ -36,20 +36,6 @@ class _GameScreenState extends State<GameScreen> {
     _initializeGame();
   }
 
-  void someGameEndingFunction() {
-    endGame(); // Call this function to clean up and navigate
-  }
-
-  void endGame() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-    if (roomRef != null || _batsmanId.isEmpty || _bowlerId.isEmpty) {
-      await roomRef.remove();
-      devtools.log('Room removed');
-    }
-    // ignore: use_build_context_synchronously
-    Navigator.pushReplacementNamed(context, '/end');
-  }
-
   Future<void> _initializeGame() async {
     final roomRef = _database.ref('rooms/${widget.roomId}');
     final roomSnapshot = await roomRef.get();
@@ -57,25 +43,40 @@ class _GameScreenState extends State<GameScreen> {
     if (roomSnapshot.exists) {
       final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
 
-      setState(() {
-        _batsmanId = roomData['batsmanId'] ?? '';
-        _bowlerId = roomData['bowlerId'] ?? '';
-        _ballCount = roomData['ballCount'] ?? 0;
-        _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
-        _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-        _batsmanChoice = roomData['batsmanChoice'] ?? '';
-        _bowlerChoice = roomData['bowlerChoice'] ?? '';
-        _status = roomData['status'] ?? 'waiting';
-      });
+      // Retrieve player IDs
+      final player1Id = roomData['player1Id'] as String?;
+      final player2Id = roomData['player2Id'] as String?;
 
-      // Check if both players are present and the game should start
-      if (_batsmanId.isNotEmpty &&
-          _bowlerId.isNotEmpty &&
-          _status == 'waiting') {
-        await roomRef.update({'status': 'in_progress'});
+      if (player1Id != null && player2Id != null) {
+        // Randomly assign batsman and bowler
+        final random = Random();
+        final isPlayer1Batsman =
+            random.nextBool(); // Randomly choose which player is the batsman
+
+        setState(() {
+          _batsmanId = isPlayer1Batsman ? player1Id : player2Id;
+          _bowlerId = isPlayer1Batsman ? player2Id : player1Id;
+          _ballCount = roomData['ballCount'] ?? 0;
+          _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+          _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
+          _batsmanChoice = roomData['batsmanChoice'] ?? '';
+          _bowlerChoice = roomData['bowlerChoice'] ?? '';
+          _status = roomData['status'] ?? 'waiting';
+        });
+
+        // Update roles in Firebase
+        await roomRef.update({
+          'batsmanId': _batsmanId,
+          'bowlerId': _bowlerId,
+          'status': 'in_progress'
+        });
+
+        // Start the game turns
+        _startTurns();
+      } else {
+        devtools.log('Player IDs are not set');
       }
 
-      // Listen for changes to the game state
       roomRef.onValue.listen((event) {
         final updatedData = event.snapshot.value as Map<dynamic, dynamic>?;
 
@@ -93,8 +94,49 @@ class _GameScreenState extends State<GameScreen> {
         }
       });
     } else {
-      // Handle the case where the room does not exist
       devtools.log('Room does not exist');
+    }
+  }
+
+  Future<void> _startTurns() async {
+    if (_batsmanId.isNotEmpty && _bowlerId.isNotEmpty) {
+      if (_batsmanId == _currentUserId) {
+        await _turn1();
+        await _showRoleSwapDialog();
+        await _turn2();
+        _checkWinner();
+      } else {
+        await _turn2();
+        await _showRoleSwapDialog();
+        await _turn1();
+        _checkWinner();
+      }
+    }
+  }
+
+  Future<void> _turn1() async {
+    while (_ballCount > 0) {
+      await _makeChoice(_batsmanChoice);
+      if (_ballCount <= 0) {
+        return;
+      }
+      if (_status == 'out') {
+        await _showOutScreen();
+        return;
+      }
+    }
+  }
+
+  Future<void> _turn2() async {
+    while (_ballCount > 0 && _bowlerId == _currentUserId) {
+      await _makeChoice(_bowlerChoice);
+      if (_ballCount <= 0) {
+        return;
+      }
+      if (_status == 'out') {
+        await _showOutScreen();
+        return;
+      }
     }
   }
 
@@ -152,13 +194,11 @@ class _GameScreenState extends State<GameScreen> {
     if (batsmanChoice == bowlerChoice) {
       final currentUserId = _auth.currentUser!.uid;
       final runs = currentUserId == _batsmanId ? _runsPlayer1 : _runsPlayer2;
-      _showOutScreen();
-      _showRoleSwapDialog();
       await roomRef.update({
-        'ballCount': _ballCount + balls,
+        'ballCount': _ballCount,
         'batsmanChoice': null,
         'bowlerChoice': null,
-        'runs${currentUserId == _batsmanId ? 'Player1' : 'Player2'}': runs + 0,
+        'runs${currentUserId == _batsmanId ? 'Player1' : 'Player2'}': runs,
         'status': 'out',
       });
     } else {
@@ -175,15 +215,13 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     if (_ballCount <= 0) {
-      // Swap roles
       await roomRef.update({
         'batsmanId': _bowlerId,
         'bowlerId': _batsmanId,
         'ballCount': 20, // Reset ball count for the new innings
-        'status': 'waiting', // You can change status as needed
+        'status': 'waiting',
       });
 
-      // Optional: Show a message indicating the roles have swapped
       _showRoleSwapDialog();
     }
 
@@ -192,10 +230,94 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  void _showOutScreen() {
+  Future<void> _checkWinner() async {
+    final roomRef = _database.ref('rooms/${widget.roomId}');
+    final snapshot = await roomRef.get();
+    final data = snapshot.value as Map<dynamic, dynamic>;
+    final runsPlayer1 = data['runsPlayer1'] ?? 0;
+    final runsPlayer2 = data['runsPlayer2'] ?? 0;
+
+    String result;
+
+    if (runsPlayer1 > runsPlayer2) {
+      result = 'Player 1 wins!';
+    } else if (runsPlayer2 > runsPlayer1) {
+      result = 'Player 2 wins!';
+    } else {
+      result = 'The match is a DRAW';
+    }
+
+    // Display result
     showDialog(
       context: context,
       builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+          content: Text(
+            result,
+            style: const TextStyle(
+              color: Color.fromRGBO(20, 255, 236, 1),
+              fontSize: 40,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(
+                    context, '/home'); // Navigate to HomePage
+              },
+              child: const Text(
+                'Return to Home',
+                style: TextStyle(
+                  color: Color.fromRGBO(13, 115, 119, 1),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showRoleSwapDialog() async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+          content: const Text(
+            'Roles have been swapped!',
+            style: TextStyle(
+              color: Color.fromRGBO(20, 255, 236, 1),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                'Continue',
+                style: TextStyle(
+                  color: Color.fromRGBO(13, 115, 119, 1),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showOutScreen() async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
           content: const Text(
@@ -207,7 +329,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          actions: [
+          actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -321,46 +443,6 @@ class _GameScreenState extends State<GameScreen> {
         value,
         style: const TextStyle(color: Color(0xFF02111B), fontSize: 18),
       ),
-    );
-  }
-
-  void _showRoleSwapDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        // Create a Future for the automatic closing
-        Future.delayed(const Duration(seconds: 5), () {
-          if (Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-          }
-        });
-
-        return AlertDialog(
-          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
-          content: const Text(
-            'Roles have been swapped! The bowler is now the batsman, and vice versa.',
-            style: TextStyle(
-              color: Color.fromRGBO(20, 255, 236, 1),
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  color: Color.fromRGBO(13, 115, 119, 1),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
