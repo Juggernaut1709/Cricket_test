@@ -23,8 +23,8 @@ class _GameScreenState extends State<GameScreen> {
   int _ballCount = 0;
   int _runsPlayer1 = 0;
   int _runsPlayer2 = 0;
-  String _batsmanChoice = '';
-  String _bowlerChoice = '';
+  String _p1Choice = '';
+  String _p2Choice = '';
   String _status = 'waiting'; // Default value
   bool _isChoosing = false;
   String _selectedButton = '';
@@ -59,8 +59,8 @@ class _GameScreenState extends State<GameScreen> {
           _ballCount = roomData['ballCount'] ?? 0;
           _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
           _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-          _batsmanChoice = roomData['batsmanChoice'] ?? '';
-          _bowlerChoice = roomData['bowlerChoice'] ?? '';
+          _p1Choice = roomData['p1Choice'] ?? '';
+          _p2Choice = roomData['p2Choice'] ?? '';
           _status = roomData['status'] ?? 'waiting';
         });
 
@@ -87,8 +87,8 @@ class _GameScreenState extends State<GameScreen> {
             _ballCount = updatedData['ballCount'] ?? 0;
             _runsPlayer1 = updatedData['runsPlayer1'] ?? 0;
             _runsPlayer2 = updatedData['runsPlayer2'] ?? 0;
-            _batsmanChoice = updatedData['batsmanChoice'] ?? '';
-            _bowlerChoice = updatedData['bowlerChoice'] ?? '';
+            _p1Choice = updatedData['p1Choice'] ?? '';
+            _p2Choice = updatedData['p2Choice'] ?? '';
             _status = updatedData['status'] ?? 'waiting';
           });
         }
@@ -115,28 +115,14 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _turn1() async {
-    while (_ballCount > 0) {
-      await _makeChoice(_batsmanChoice);
-      if (_ballCount <= 0) {
-        return;
-      }
-      if (_status == 'out') {
-        await _showOutScreen();
-        return;
-      }
+    while (_ballCount > 0 && _batsmanId == _currentUserId) {
+      await _makeChoice(_p1Choice);
     }
   }
 
   Future<void> _turn2() async {
     while (_ballCount > 0 && _bowlerId == _currentUserId) {
-      await _makeChoice(_bowlerChoice);
-      if (_ballCount <= 0) {
-        return;
-      }
-      if (_status == 'out') {
-        await _showOutScreen();
-        return;
-      }
+      await _makeChoice(_p2Choice);
     }
   }
 
@@ -150,12 +136,12 @@ class _GameScreenState extends State<GameScreen> {
     final currentUserId = _auth.currentUser!.uid;
 
     if (currentUserId == _batsmanId) {
-      await roomRef.update({'batsmanChoice': choice});
+      await roomRef.update({'p1Choice': choice});
     } else if (currentUserId == _bowlerId) {
-      await roomRef.update({'bowlerChoice': choice});
+      await roomRef.update({'p2Choice': choice});
     }
 
-    await Future.delayed(const Duration(seconds: 3), () async {
+    await Future.delayed(const Duration(seconds: 4), () async {
       devtools.log('Resolving choices...');
 
       final snapshot = await roomRef.get();
@@ -163,150 +149,130 @@ class _GameScreenState extends State<GameScreen> {
 
       devtools.log('Data: $data');
 
-      final batsmanChoice = data['batsmanChoice'];
-      final bowlerChoice = data['bowlerChoice'];
+      final p1Choice = data['p1Choice'];
+      final p2Choice = data['p2Choice'];
 
-      if (batsmanChoice != null && bowlerChoice != null) {
-        _resolveChoices(batsmanChoice, bowlerChoice, balls);
+      if (p1Choice != null && p2Choice != null) {
+        _resolveChoices(p1Choice, p2Choice, balls);
       } else {
-        if (batsmanChoice == null) {
+        if (p1Choice == null) {
           await roomRef
-              .update({'batsmanChoice': (Random().nextInt(6) + 1).toString()});
+              .update({'p1Choice': (Random().nextInt(6) + 1).toString()});
         }
-        if (bowlerChoice == null) {
+        if (p2Choice == null) {
           await roomRef
-              .update({'bowlerChoice': (Random().nextInt(6) + 1).toString()});
+              .update({'p2Choice': (Random().nextInt(6) + 1).toString()});
         }
 
         final updatedData =
             (await roomRef.get()).value as Map<dynamic, dynamic>;
-        final newBatsmanChoice = updatedData['batsmanChoice'];
-        final newBowlerChoice = updatedData['bowlerChoice'];
-        _resolveChoices(newBatsmanChoice, newBowlerChoice, balls);
+        final newp1Choice = updatedData['p1Choice'];
+        final newp2Choice = updatedData['p2Choice'];
+        _resolveChoices(newp1Choice, newp2Choice, balls);
       }
     });
   }
 
-  void _resolveChoices(
-      String batsmanChoice, String bowlerChoice, int balls) async {
+  void _resolveChoices(String p1Choice, String p2Choice, int balls) async {
     final roomRef = _database.ref('rooms/${widget.roomId}');
 
-    if (batsmanChoice == bowlerChoice) {
+    if (p1Choice == p2Choice) {
       final currentUserId = _auth.currentUser!.uid;
-      final runs = currentUserId == _batsmanId ? _runsPlayer1 : _runsPlayer2;
-      await roomRef.update({
-        'ballCount': _ballCount,
-        'batsmanChoice': null,
-        'bowlerChoice': null,
-        'runs${currentUserId == _batsmanId ? 'Player1' : 'Player2'}': runs,
-        'status': 'out',
-      });
+      final int runs;
+      if (currentUserId == _batsmanId) {
+        runs = _runsPlayer1;
+        await roomRef.update({
+          'ballCount': _ballCount,
+          'p1Choice': null,
+          'p2Choice': null,
+          'runsPlayer1': runs,
+          'status': 'out',
+        });
+      } else {
+        runs = _runsPlayer2;
+        await roomRef.update({
+          'ballCount': _ballCount,
+          'p1Choice': null,
+          'p2Choice': null,
+          'runsPlayer2': runs,
+          'status': 'out',
+        });
+        _status = 'out';
+      }
     } else {
       balls++;
-      final runs = _currentUserId == _batsmanId ? _runsPlayer1 : _runsPlayer2;
-      await roomRef.update({
-        'ballCount': _ballCount - 1,
-        'runs${_currentUserId == _batsmanId ? 'Player1' : 'Player2'}':
-            runs + int.parse(batsmanChoice),
-        'batsmanChoice': null,
-        'bowlerChoice': null,
-        'status': 'in_progress',
-      });
+      final int runs;
+      final currentUserId = _auth.currentUser!.uid;
+      if (currentUserId == _batsmanId) {
+        runs = _runsPlayer1;
+        await roomRef.update({
+          'runsPlayer1': runs + int.parse(p1Choice),
+          'ballCount': _ballCount - 1,
+          'p1Choice': null,
+          'p2Choice': null,
+          'status': 'in_progress',
+        });
+      } else {
+        runs = _runsPlayer2;
+        await roomRef.update({
+          'runsPlayer2': runs + int.parse(p2Choice),
+          'ballCount': _ballCount - 1,
+          'p1Choice': null,
+          'p2Choice': null,
+          'status': 'in_progress',
+        });
+      }
+      _status = 'in_progress';
     }
 
     if (_ballCount <= 0) {
       await roomRef.update({
         'batsmanId': _bowlerId,
         'bowlerId': _batsmanId,
-        'ballCount': 20, // Reset ball count for the new innings
+        'ballCount': balls, // Reset ball count for the new innings
         'status': 'waiting',
       });
 
       _showRoleSwapDialog();
     }
 
+    if ('out' == _status) {
+      await roomRef.update({
+        'batsmanId': _bowlerId,
+        'bowlerId': _batsmanId,
+        'ballCount': balls, // Reset ball count for the new innings
+        'status': 'waiting',
+      });
+
+      _showRoleSwapDialog();
+    }
     setState(() {
       _isChoosing = false;
+      _selectedButton = '';
     });
-  }
-
-  Future<void> _checkWinner() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-    final snapshot = await roomRef.get();
-    final data = snapshot.value as Map<dynamic, dynamic>;
-    final runsPlayer1 = data['runsPlayer1'] ?? 0;
-    final runsPlayer2 = data['runsPlayer2'] ?? 0;
-
-    String result;
-
-    if (runsPlayer1 > runsPlayer2) {
-      result = 'Player 1 wins!';
-    } else if (runsPlayer2 > runsPlayer1) {
-      result = 'Player 2 wins!';
-    } else {
-      result = 'The match is a DRAW';
-    }
-
-    // Display result
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
-          content: Text(
-            result,
-            style: const TextStyle(
-              color: Color.fromRGBO(20, 255, 236, 1),
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacementNamed(
-                    context, '/home'); // Navigate to HomePage
-              },
-              child: const Text(
-                'Return to Home',
-                style: TextStyle(
-                  color: Color.fromRGBO(13, 115, 119, 1),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _showRoleSwapDialog() async {
     return showDialog<void>(
       context: context,
+      barrierDismissible: false, // User must tap a button
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
-          content: const Text(
-            'Roles have been swapped!',
-            style: TextStyle(
-              color: Color.fromRGBO(20, 255, 236, 1),
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          title: const Text('Role Swap'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const <Widget>[
+                Text('Now it\'s time to swap roles.'),
+                Text('The bowler will now bat, and the batsman will bowl.'),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
           actions: <Widget>[
             TextButton(
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  color: Color.fromRGBO(13, 115, 119, 1),
-                ),
-              ),
             ),
           ],
         );
@@ -314,134 +280,145 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Future<void> _showOutScreen() async {
-    return showDialog<void>(
+  void _checkWinner() async {
+    final roomRef = _database.ref('rooms/${widget.roomId}');
+    final snapshot = await roomRef.get();
+    final roomData = snapshot.value as Map<dynamic, dynamic>;
+    final runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+    final runsPlayer2 = roomData['runsPlayer2'] ?? 0;
+
+    String winnerMessage;
+    if (runsPlayer1 > runsPlayer2) {
+      winnerMessage = 'Player 1 wins!';
+      await _updatePlayerStats(_batsmanId, true);
+      await _updatePlayerStats(_bowlerId, false);
+    } else if (runsPlayer2 > runsPlayer1) {
+      winnerMessage = 'Player 2 wins!';
+      await _updatePlayerStats(_batsmanId, false);
+      await _updatePlayerStats(_bowlerId, true);
+    } else {
+      winnerMessage = 'The match is a DRAW!';
+    }
+
+    // Show the winner message
+    await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
-          content: const Text(
-            'OUT!',
-            style: TextStyle(
-              color: Color.fromRGBO(20, 255, 236, 1),
-              fontSize: 40,
-              fontWeight: FontWeight.bold,
+          title: const Text('Game Over'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(winnerMessage),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
           actions: <Widget>[
             TextButton(
+              child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/home', (Route<dynamic> route) => false);
               },
-              child: const Text(
-                'Continue',
-                style: TextStyle(
-                  color: Color.fromRGBO(13, 115, 119, 1),
-                ),
-              ),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _updatePlayerStats(String userId, bool isWinner) async {
+    final playerRef = _database.ref('players/$userId');
+    final snapshot = await playerRef.get();
+    final playerData = snapshot.value as Map<dynamic, dynamic>;
+    final wins = playerData['wins'] ?? 0;
+    final losses = playerData['losses'] ?? 0;
+
+    if (isWinner) {
+      await playerRef.update({'wins': wins + 1});
+    } else {
+      await playerRef.update({'losses': losses + 1});
+    }
+  }
+
+  void _onButtonPressed(String choice) {
+    setState(() {
+      _selectedButton = choice;
+    });
+    _makeChoice(choice);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 58, 4, 105),
-        title: Text(
-          'Game - ${widget.roomId}',
-          style: const TextStyle(color: Color.fromRGBO(20, 255, 236, 1)),
-        ),
-      ),
-      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Status: $_status',
-                    style: const TextStyle(
-                        fontSize: 20, color: Color.fromRGBO(20, 255, 236, 1)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Balls Left: $_ballCount',
-                    style: const TextStyle(
-                        fontSize: 20, color: Color.fromRGBO(20, 255, 236, 1)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Player 1 Runs: $_runsPlayer1',
-                    style: const TextStyle(
-                        fontSize: 18, color: Color.fromRGBO(20, 255, 236, 1)),
-                  ),
-                  Text(
-                    'Player 2 Runs: $_runsPlayer2',
-                    style: const TextStyle(
-                        fontSize: 18, color: Color.fromRGBO(20, 255, 236, 1)),
-                  ),
-                ],
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Top-left for Player 1 Score
+            Positioned(
+              top: 10,
+              left: 10,
+              child: Text(
+                'Player 1: $_runsPlayer1',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.green,
+                ),
               ),
-              Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildAnimatedButton('1'),
-                      _buildAnimatedButton('2'),
-                      _buildAnimatedButton('3'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildAnimatedButton('4'),
-                      _buildAnimatedButton('5'),
-                      _buildAnimatedButton('6'),
-                    ],
-                  ),
-                ],
+            ),
+
+            // Top-right for Player 2 Score
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Text(
+                'Player 2: $_runsPlayer2',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.red,
+                ),
               ),
-            ],
-          ),
+            ),
+
+            // Buttons at the bottom
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                padding:
+                    EdgeInsets.only(bottom: 20), // Adjust padding as needed
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildChoiceButton('1'),
+                    _buildChoiceButton('2'),
+                    _buildChoiceButton('3'),
+                    _buildChoiceButton('4'),
+                    _buildChoiceButton('5'),
+                    _buildChoiceButton('6'),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedButton(String value) {
-    final isSelected = _selectedButton == value;
-    final isButtonDisabled = !_isChoosing && _status != 'in_progress';
+  Widget _buildChoiceButton(String choice) {
+    final bool isSelected = choice == _selectedButton;
 
-    return ElevatedButton(
-      onPressed: isButtonDisabled
-          ? null
-          : () {
-              setState(() {
-                _selectedButton = value;
-              });
-              _makeChoice(value);
-            },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected
-            ? const Color.fromRGBO(20, 255, 236, 1)
-            : const Color.fromRGBO(13, 115, 119, 1),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      ),
-      child: Text(
-        value,
-        style: const TextStyle(color: Color(0xFF02111B), fontSize: 18),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: ElevatedButton(
+        onPressed: () => _onButtonPressed(choice),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? Colors.blue : Colors.grey,
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
+          textStyle: const TextStyle(fontSize: 20),
+        ),
+        child: Text(choice),
       ),
     );
   }
