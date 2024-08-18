@@ -62,6 +62,7 @@ class _JoinRoomState extends State<JoinRoom> {
     });
 
     // Navigate to the game screen
+    // ignore: use_build_context_synchronously
     Navigator.pushNamed(context, '/game', arguments: roomId);
   }
 

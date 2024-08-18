@@ -28,7 +28,6 @@ class _CreateRoomState extends State<CreateRoom> {
 
   void dispose() {
     // Remove the room when the user leaves the page
-    roomRef.remove();
     super.dispose();
   }
 
@@ -73,18 +72,24 @@ class _CreateRoomState extends State<CreateRoom> {
     });
   }
 
-  void startGame() {
-    // Assign roles randomly
+  void startGame() async {
     final user = FirebaseAuth.instance.currentUser;
-    final bool isBatsman = Random().nextBool();
 
-    roomRef.update({
-      'batsmanId': isBatsman ? user?.uid : roomRef.child('player2Id').get(),
-      'bowlerId': isBatsman ? roomRef.child('player2Id').get() : user?.uid,
+    // Ensure we have a valid user and roomRef
+    if (user == null || roomRef == null) return;
+
+    final player2Id = (await roomRef.child('player2Id').get()).value as String?;
+
+    if (player2Id == null) return;
+
+    final isBatsman = Random().nextBool();
+
+    await roomRef.update({
+      'batsmanId': isBatsman ? user.uid : player2Id,
+      'bowlerId': isBatsman ? player2Id : user.uid,
       'status': 'in_progress',
     });
 
-    // Navigate to the game screen
     Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
   }
 
