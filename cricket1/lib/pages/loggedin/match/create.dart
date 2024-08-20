@@ -55,6 +55,8 @@ class _CreateRoomState extends State<CreateRoom> {
       'runsPlayer2': 0,
       'batsmanChoice': null,
       'bowlerChoice': null,
+      'p1Choice': null,
+      'p2Choice': null,
       'status': 'waiting',
     });
 
@@ -81,14 +83,6 @@ class _CreateRoomState extends State<CreateRoom> {
     final player2Id = (await roomRef.child('player2Id').get()).value as String?;
 
     if (player2Id == null) return;
-
-    final isBatsman = Random().nextBool();
-
-    await roomRef.update({
-      'batsmanId': isBatsman ? user.uid : player2Id,
-      'bowlerId': isBatsman ? player2Id : user.uid,
-      'status': 'in_progress',
-    });
 
     Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
   }
