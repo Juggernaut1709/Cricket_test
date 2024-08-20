@@ -37,6 +37,7 @@ class _GameScreenState extends State<GameScreen> {
   String _status = 'waiting'; // Default value
   bool _isChoosing = false;
   String _selectedButton = '';
+  int _totalBalls = 0;
 
   @override
   void initState() {
@@ -77,6 +78,7 @@ class _GameScreenState extends State<GameScreen> {
         _p1Choice = roomData['p1Choice'] ?? '';
         _p2Choice = roomData['p2Choice'] ?? '';
         _status = roomData['status'] ?? 'waiting';
+        _totalBalls = roomData['totalBalls'] ?? 0;
       });
 
       // Update roles in Firebase
@@ -94,15 +96,19 @@ class _GameScreenState extends State<GameScreen> {
 
         if (updatedData != null) {
           setState(() {
-            _batsmanId = updatedData['batsmanId'] ?? '';
-            _bowlerId = updatedData['bowlerId'] ?? '';
-            _ballCount = updatedData['ballCount'] ?? 0;
-            _runsPlayer1 = updatedData['runsPlayer1'] ?? 0;
-            _runsPlayer2 = updatedData['runsPlayer2'] ?? 0;
-            _p1Choice = updatedData['p1Choice'] ?? '';
-            _p2Choice = updatedData['p2Choice'] ?? '';
-            _status = updatedData['status'] ?? 'waiting';
+            _batsmanId = updatedData['batsmanId'] ?? _batsmanId;
+            _bowlerId = updatedData['bowlerId'] ?? _bowlerId;
+            _ballCount = updatedData['ballCount'] ?? _ballCount;
+            _runsPlayer1 = updatedData['runsPlayer1'] ?? _runsPlayer1;
+            _runsPlayer2 = updatedData['runsPlayer2'] ?? _runsPlayer2;
+            _p1Choice = updatedData['p1Choice'] ?? _p1Choice;
+            _p2Choice = updatedData['p2Choice'] ?? _p2Choice;
+            _status = updatedData['status'] ?? _status;
           });
+
+          if (_status == 'out' && _currentUserId == _batsmanId) {
+            _handleOut();
+          }
         }
       });
     } else {
@@ -130,7 +136,6 @@ class _GameScreenState extends State<GameScreen> {
     while (_ballCount > 0 || _status != 'out') {
       await _makeChoice(_p1Choice);
     }
-    await _showRoleSwapDialog();
     if (_player1Id == _batsmanId) {
       _showBatting();
     } else {
@@ -150,7 +155,6 @@ class _GameScreenState extends State<GameScreen> {
     while (_ballCount > 0 || _status != 'out') {
       await _makeChoice(_p2Choice);
     }
-    await _showRoleSwapDialog();
     if (_player2Id == _batsmanId) {
       _showBatting();
     } else {
@@ -210,89 +214,137 @@ class _GameScreenState extends State<GameScreen> {
   void _resolveChoices(String p1Choice, String p2Choice, int balls) async {
     final roomRef = _database.ref('rooms/${widget.roomId}');
 
-    if (p1Choice == p2Choice) {
+    bool isOut = p1Choice == p2Choice;
+
+    if (isOut) {
+      _status = 'out';
       if (_player1Id == _batsmanId) {
-        runs = _runsPlayer1;
         await roomRef.update({
-          'runsPlayer1': runs,
+          'status': 'out',
+          'runsPlayer1': _runsPlayer1,
           'ballCount': _ballCount,
           'p1Choice': null,
           'p2Choice': null,
-          'status': 'out',
         });
-      } else if (_player2Id == _batsmanId) {
-        runs = _runsPlayer2;
+      } else {
         await roomRef.update({
-          'runsPlayer2': runs,
+          'status': 'out',
+          'runsPlayer2': _runsPlayer2,
           'ballCount': _ballCount,
           'p1Choice': null,
           'p2Choice': null,
-          'status': 'out',
         });
-        _status = 'out';
       }
     } else {
-      if (_player1Id == _batsmanId) {
-        balls++;
-        runs = _runsPlayer1;
-        await roomRef.update({
-          'runsPlayer1': runs + int.parse(p1Choice),
-          'p1Choice': null,
-          'p2Choice': null,
-          'status': 'in_progress',
-          'ballCount': _ballCount - 1
-        });
-      } else if (_player2Id == _batsmanId) {
-        balls++;
-        runs = _runsPlayer2;
-        await roomRef.update({
-          'runsPlayer2': runs + int.parse(p2Choice),
-          'p1Choice': null,
-          'p2Choice': null,
-          'status': 'in_progress',
-          'ballCount': _ballCount - 1
-        });
+      int runs = (_batsmanId == _player1Id) ? _runsPlayer1 : _runsPlayer2;
+      String runChoice = (_batsmanId == _player1Id) ? p1Choice : p2Choice;
+
+      runs += int.parse(runChoice);
+      _ballCount--;
+
+      await roomRef.update({
+        _batsmanId == _player1Id ? 'runsPlayer1' : 'runsPlayer2': runs,
+        'ballCount': _ballCount,
+        'p1Choice': null,
+        'p2Choice': null,
+        'status': _ballCount <= 0 ? 'waiting' : 'in_progress',
+      });
+
+      if (_ballCount <= 0) {
+        _swapRoles();
       }
-      _status = 'in_progress';
     }
 
-    if (_ballCount <= 0) {
-      await roomRef.update({
-        'batsmanId': _bowlerId,
-        'bowlerId': _batsmanId,
-        'ballCount': balls, // Reset ball count for the new innings
-        'status': 'waiting',
-      });
-    }
-
-    if ('out' == _status) {
-      await roomRef.update({
-        'batsmanId': _bowlerId,
-        'bowlerId': _batsmanId,
-        'ballCount': _ballCount + balls, // Reset ball count for the new innings
-        'status': 'waiting',
-      });
-    }
     setState(() {
       _isChoosing = false;
       _selectedButton = '';
     });
   }
 
-  Future<void> _showRoleSwapDialog() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible:
-          false, // User cannot dismiss the dialog by tapping outside
-      builder: (BuildContext context) {
-        // Automatically close the dialog after 3 seconds
-        Future.delayed(const Duration(seconds: 3), () {
-          Navigator.of(context).pop(); // Dismiss the dialog
-        });
+  void _handleOut() async {
+    final roomRef = _database.ref('rooms/${widget.roomId}');
 
-        return const AlertDialog(
-          title: Text('Role Swap'),
-          content: Text('Swapping roles!'),
+    // Check who is currently the batsman and swap roles
+    if (_currentUserId == _batsmanId) {
+      // Update the role swap in Firebase
+      await roomRef.update({
+        'batsmanId': _bowlerId,
+        'bowlerId': _batsmanId,
+        'ballCount': _totalBalls, // Reset ball count for the new batsman
+        'status': 'in_progress',
+      });
+
+      // Update the local state
+      setState(() {
+        _batsmanId = _bowlerId;
+        _bowlerId = _currentUserId;
+        _ballCount = _totalBalls;
+      });
+
+      // Show role swap dialog or notification
+      _showRoleSwapDialog();
+    }
+
+    // Reset player choices after role swap
+    await roomRef.update({
+      'p1Choice': null,
+      'p2Choice': null,
+    });
+
+    setState(() {
+      _isChoosing = false;
+      _selectedButton = '';
+    });
+  }
+
+  void _swapRoles() async {
+    final roomRef = _database.ref('rooms/${widget.roomId}');
+
+    // Swap the batsman and bowler IDs
+    String newBatsmanId = _bowlerId;
+    String newBowlerId = _batsmanId;
+
+    // Update Firebase with the new roles and reset the ball count
+    await roomRef.update({
+      'batsmanId': newBatsmanId,
+      'bowlerId': newBowlerId,
+      'ballCount': _totalBalls, // Reset ball count for the new innings
+      'status': 'in_progress',
+    });
+
+    // Update the local state
+    setState(() {
+      _batsmanId = newBatsmanId;
+      _bowlerId = newBowlerId;
+      _ballCount = _totalBalls;
+    });
+
+    // Reset choices after the role swap
+    await roomRef.update({
+      'batsmanChoice': null,
+      'bowlerChoice': null,
+    });
+
+    // Notify the players about the role swap
+    _showRoleSwapDialog();
+  }
+
+  void _showRoleSwapDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Role Swap"),
+          content:
+              const Text("Roles have been swapped. You are now the bowler."),
+          actions: [
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         );
       },
     );
@@ -506,12 +558,14 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildChoiceButton(String value) {
     final isSelected = _selectedButton == value;
+
     return GestureDetector(
       onTap: _isChoosing
           ? null
           : () {
               setState(() {
                 _selectedButton = value;
+                _isChoosing = true; // Disable buttons while processing
               });
               _makeChoice(value);
             },

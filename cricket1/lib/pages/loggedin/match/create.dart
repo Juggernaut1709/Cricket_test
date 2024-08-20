@@ -58,6 +58,7 @@ class _CreateRoomState extends State<CreateRoom> {
       'p1Choice': null,
       'p2Choice': null,
       'status': 'waiting',
+      'totalBalls': widget.balls,
     });
 
     // Set loading to false after room creation
