@@ -65,28 +65,31 @@ class _GameScreenState extends State<GameScreen> {
       _player2Id = (roomData['player2Id'] as String?)!;
 
       // Randomly assign batsman and bowler
-      final random = Random();
-      final isPlayer1Batsman =
-          random.nextBool(); // Randomly choose which player is the batsman
-
-      setState(() {
-        _batsmanId = isPlayer1Batsman ? _player1Id : _player2Id;
-        _bowlerId = isPlayer1Batsman ? _player2Id : _player1Id;
-        _ballCount = roomData['ballCount'] ?? 0;
-        _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
-        _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-        _p1Choice = roomData['p1Choice'] ?? '';
-        _p2Choice = roomData['p2Choice'] ?? '';
-        _status = roomData['status'] ?? 'waiting';
-        _totalBalls = roomData['totalBalls'] ?? 0;
-      });
-
+      if (_player1Id == _currentUserId) {
+        final random = Random();
+        final isPlayer1Batsman =
+            random.nextBool(); // Randomly choose which player is the batsman
+        setState(() {
+          _batsmanId = isPlayer1Batsman ? _player1Id : _player2Id;
+          _bowlerId = isPlayer1Batsman ? _player2Id : _player1Id;
+        });
+        await roomRef.update({
+          'batsmanId': _batsmanId,
+          'bowlerId': _bowlerId,
+          'status': 'in_progress'
+        });
+      } else {
+        _batsmanId = roomData['batsmanId'] ?? '';
+        _bowlerId = roomData['bowlerId'] ?? '';
+      }
       // Update roles in Firebase
-      await roomRef.update({
-        'batsmanId': _batsmanId,
-        'bowlerId': _bowlerId,
-        'status': 'in_progress'
-      });
+      _ballCount = roomData['ballCount'] ?? 0;
+      _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+      _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
+      _p1Choice = roomData['p1Choice'] ?? '';
+      _p2Choice = roomData['p2Choice'] ?? '';
+      _status = roomData['status'] ?? 'waiting';
+      _totalBalls = roomData['totalBalls'] ?? 0;
 
       // Start the game turns
       _startTurns();
@@ -105,10 +108,6 @@ class _GameScreenState extends State<GameScreen> {
             _p2Choice = updatedData['p2Choice'] ?? _p2Choice;
             _status = updatedData['status'] ?? _status;
           });
-
-          if (_status == 'out' && _currentUserId == _batsmanId) {
-            _handleOut();
-          }
         }
       });
     } else {
@@ -221,21 +220,21 @@ class _GameScreenState extends State<GameScreen> {
 
     if (isOut) {
       _status = 'out';
-      if (_player1Id == _batsmanId) {
+      if (_player1Id == _currentUserId) {
         await roomRef.update({
           'status': 'out',
-          'runsPlayer1': _runsPlayer1,
           'ballCount': _ballCount,
           'p1Choice': null,
           'p2Choice': null,
         });
+      }
+      if (_player1Id == _batsmanId) {
+        await roomRef.update({
+          'runsPlayer1': _runsPlayer1,
+        });
       } else {
         await roomRef.update({
-          'status': 'out',
           'runsPlayer2': _runsPlayer2,
-          'ballCount': _ballCount,
-          'p1Choice': null,
-          'p2Choice': null,
         });
       }
     } else {
