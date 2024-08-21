@@ -133,15 +133,16 @@ class _GameScreenState extends State<GameScreen> {
     } else {
       _showBalling();
     }
-    while (_ballCount > 0 || _status != 'out') {
+    while (_ballCount > 0 && _status != 'out') {
       await _makeChoice(_p1Choice);
     }
+    _ballCount <= 0 ? _swapRoles() : _handleOut();
     if (_player1Id == _batsmanId) {
       _showBatting();
     } else {
       _showBalling();
     }
-    while (_ballCount > 0 || _status != 'out') {
+    while (_ballCount > 0 && _status != 'out') {
       await _makeChoice(_p1Choice);
     }
   }
@@ -152,15 +153,16 @@ class _GameScreenState extends State<GameScreen> {
     } else {
       _showBalling();
     }
-    while (_ballCount > 0 || _status != 'out') {
+    while (_ballCount > 0 && _status != 'out') {
       await _makeChoice(_p2Choice);
     }
+    _ballCount <= 0 ? _swapRoles() : _handleOut();
     if (_player2Id == _batsmanId) {
       _showBatting();
     } else {
       _showBalling();
     }
-    while (_ballCount > 0 || _status != 'out') {
+    while (_ballCount > 0 && _status != 'out') {
       await _makeChoice(_p2Choice);
     }
   }
@@ -179,34 +181,35 @@ class _GameScreenState extends State<GameScreen> {
       await roomRef.update({'p2Choice': choice});
     }
 
-    await Future.delayed(const Duration(seconds: 6), () async {
-      devtools.log('Resolving choices...');
-
+    // Timer to enforce a 5-second limit for choice selection
+    // ignore: prefer_const_constructors
+    Timer timer = Timer(Duration(seconds: 5), () async {
       final snapshot = await roomRef.get();
       final data = snapshot.value as Map<dynamic, dynamic>;
 
-      devtools.log('Data: $data');
+      if (currentUserId == _player1Id && data['p1Choice'] == null) {
+        await roomRef
+            .update({'p1Choice': (Random().nextInt(6) + 1).toString()});
+      } else if (currentUserId == _player2Id && data['p2Choice'] == null) {
+        await roomRef
+            .update({'p2Choice': (Random().nextInt(6) + 1).toString()});
+      }
+    });
 
+    // Listen for changes in p1Choice and p2Choice
+    roomRef.onValue.listen((event) async {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
       final p1Choice = data['p1Choice'];
       final p2Choice = data['p2Choice'];
 
       if (p1Choice != null && p2Choice != null) {
+        // Once both choices are made, resolve them
+        timer
+            .cancel(); // Cancel the timer if both choices are made within 5 seconds
         _resolveChoices(p1Choice, p2Choice, balls);
-      } else {
-        if (p1Choice == null) {
-          await roomRef
-              .update({'p1Choice': (Random().nextInt(6) + 1).toString()});
-        }
-        if (p2Choice == null) {
-          await roomRef
-              .update({'p2Choice': (Random().nextInt(6) + 1).toString()});
-        }
 
-        final updatedData =
-            (await roomRef.get()).value as Map<dynamic, dynamic>;
-        final newp1Choice = updatedData['p1Choice'];
-        final newp2Choice = updatedData['p2Choice'];
-        _resolveChoices(newp1Choice, newp2Choice, balls);
+        // Stop listening once choices are resolved
+        roomRef.onValue.listen(null).cancel();
       }
     });
   }
@@ -249,10 +252,6 @@ class _GameScreenState extends State<GameScreen> {
         'p2Choice': null,
         'status': _ballCount <= 0 ? 'waiting' : 'in_progress',
       });
-
-      if (_ballCount <= 0) {
-        _swapRoles();
-      }
     }
 
     setState(() {
@@ -321,8 +320,8 @@ class _GameScreenState extends State<GameScreen> {
 
     // Reset choices after the role swap
     await roomRef.update({
-      'batsmanChoice': null,
-      'bowlerChoice': null,
+      'p1Choice': null,
+      'p2Choice': null,
     });
 
     // Notify the players about the role swap
@@ -330,24 +329,32 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showRoleSwapDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Role Swap"),
-          content:
-              const Text("Roles have been swapped. You are now the bowler."),
-          actions: [
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    // Show the dialog after a 3-second delay
+    Timer(Duration(seconds: 3), () {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          // Another timer to automatically close the dialog after 3 seconds
+          Timer(Duration(seconds: 3), () {
+            Navigator.of(context).pop(); // Close the dialog
+          });
+
+          return AlertDialog(
+            title: const Text("Role Swap"),
+            content:
+                const Text("Roles have been swapped. You are now the bowler."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog manually
+                },
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 
   Future<void> _showBatting() async {
