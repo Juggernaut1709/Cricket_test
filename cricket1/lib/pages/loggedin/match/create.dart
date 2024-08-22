@@ -19,6 +19,8 @@ class _CreateRoomState extends State<CreateRoom> {
   late String roomId;
   late DatabaseReference roomRef;
   bool isLoading = true;
+  late String _batsmanId;
+  late String _bowlerId;
 
   @override
   void initState() {
@@ -77,13 +79,25 @@ class _CreateRoomState extends State<CreateRoom> {
 
   void startGame() async {
     final user = FirebaseAuth.instance.currentUser;
-
+    final player1Id = user?.uid;
     // Ensure we have a valid user and roomRef
     if (user == null || roomRef == null) return;
 
     final player2Id = (await roomRef.child('player2Id').get()).value as String?;
 
     if (player2Id == null) return;
+    final random = Random();
+    final isPlayer1Batsman =
+        random.nextBool(); // Randomly choose which player is the batsman
+    setState(() {
+      _batsmanId = (isPlayer1Batsman ? player1Id : player2Id)!;
+      _bowlerId = (isPlayer1Batsman ? player2Id : player1Id)!;
+    });
+    await roomRef.update({
+      'batsmanId': _batsmanId,
+      'bowlerId': _bowlerId,
+      'status': 'in_progress'
+    });
 
     Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
   }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
@@ -232,8 +232,9 @@ class _Player1State extends State<Player1> {
 
     // Update the local state
     setState(() {
+      String temp = _batsmanId;
       _batsmanId = _bowlerId;
-      _bowlerId = _currentUserId;
+      _bowlerId = temp;
       _ballCount = _totalBalls;
     });
 
@@ -547,4 +548,4 @@ class _Player1State extends State<Player1> {
       ),
     );
   }
-}
+}*/
