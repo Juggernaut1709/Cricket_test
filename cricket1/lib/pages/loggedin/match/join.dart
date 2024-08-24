@@ -13,6 +13,8 @@ class _JoinRoomState extends State<JoinRoom> {
   final TextEditingController _roomIdController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  late DatabaseReference userRef;
+
   bool _isJoining = false;
   String _errorMessage = '';
 
@@ -23,7 +25,9 @@ class _JoinRoomState extends State<JoinRoom> {
     });
 
     final user = _auth.currentUser;
+    final player2Id = user?.uid;
     final roomId = _roomIdController.text.trim();
+    userRef = FirebaseDatabase.instance.ref('users/$player2Id');
 
     if (roomId.isEmpty) {
       setState(() {

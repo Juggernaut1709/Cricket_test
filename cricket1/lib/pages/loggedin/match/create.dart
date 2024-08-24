@@ -17,6 +17,7 @@ class CreateRoom extends StatefulWidget {
 
 class _CreateRoomState extends State<CreateRoom> {
   late String roomId;
+  late DatabaseReference userRef;
   late DatabaseReference roomRef;
   bool isLoading = true;
   late String _batsmanId;
@@ -45,6 +46,7 @@ class _CreateRoomState extends State<CreateRoom> {
 
     // Reference to the room in Firebase
     roomRef = FirebaseDatabase.instance.ref('rooms/$roomId');
+    userRef = FirebaseDatabase.instance.ref('users/$player1Id');
 
     // Set initial room data
     await roomRef.set({

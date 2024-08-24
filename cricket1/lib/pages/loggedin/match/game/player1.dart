@@ -1,43 +1,40 @@
-/*import 'package:flutter/material.dart';
+/*
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:developer' as devtools show log;
 
-class Player1 extends StatefulWidget {
+class GameScreen extends StatefulWidget {
   final String roomId;
 
-  const Player1({
-    super.key,
-    required this.roomId,
-  });
+  const GameScreen({Key? key, required this.roomId}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
-  _Player1State createState() => _Player1State();
+  _GameScreenState createState() => _GameScreenState();
 }
 
-class _Player1State extends State<Player1> {
-  int balls = 0;
-  late int runs;
+class _GameScreenState extends State<GameScreen> {
+  late DatabaseReference roomRef;
+  late StreamSubscription roomSubscription;
+  Timer? _choiceTimer;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
-  late DatabaseReference room;
-  String _currentUserId = '';
-  String _player1Id = '';
-  String _player2Id = '';
-  String _batsmanId = '';
-  String _bowlerId = '';
+  late String _currentUserId;
+
+  late String _batsmanId;
+  late String _bowlerId;
+  late String _player1Id;
+  late String _player2Id;
   int _ballCount = 0;
   int _runsPlayer1 = 0;
   int _runsPlayer2 = 0;
-  String _p1Choice = '';
-  String _p2Choice = '';
-  String _status = 'waiting'; // Default value
-  bool _isChoosing = false;
-  String _selectedButton = '';
-  int _totalBalls = 0;
+  String? _p1Choice;
+  String? _p2Choice;
+  String? _selectedButton;
+
+  static const int choiceDuration = 4;
 
   @override
   void initState() {
@@ -48,379 +45,179 @@ class _Player1State extends State<Player1> {
 
   @override
   void dispose() {
-    room.remove();
+    _choiceTimer?.cancel();
+    roomSubscription.cancel();
     super.dispose();
   }
 
   Future<void> _initializeGame() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-    room = roomRef;
+    roomRef = FirebaseDatabase.instance.ref('rooms/${widget.roomId}');
     final roomSnapshot = await roomRef.get();
 
     if (roomSnapshot.exists) {
       final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
 
-      // Retrieve player IDs
-      _player1Id = (roomData['player1Id'] as String?)!;
-      _player2Id = (roomData['player2Id'] as String?)!;
-
-      // Randomly assign batsman and bowler
-      if (_player1Id == _currentUserId) {
-        final random = Random();
-        final isPlayer1Batsman =
-            random.nextBool(); // Randomly choose which player is the batsman
-        setState(() {
-          _batsmanId = isPlayer1Batsman ? _player1Id : _player2Id;
-          _bowlerId = isPlayer1Batsman ? _player2Id : _player1Id;
-        });
-        await roomRef.update({
-          'batsmanId': _batsmanId,
-          'bowlerId': _bowlerId,
-          'status': 'in_progress'
-        });
-      } else {
+      setState(() {
         _batsmanId = roomData['batsmanId'] ?? '';
         _bowlerId = roomData['bowlerId'] ?? '';
-      }
-      // Update roles in Firebase
-      _ballCount = roomData['ballCount'] ?? 0;
-      _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
-      _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-      _p1Choice = roomData['p1Choice'] ?? '';
-      _p2Choice = roomData['p2Choice'] ?? '';
-      _status = roomData['status'] ?? 'waiting';
-      _totalBalls = roomData['totalBalls'] ?? 0;
-
-      // Start the game turns
-      _startTurns();
-
-      roomRef.onValue.listen((event) {
-        final updatedData = event.snapshot.value as Map<dynamic, dynamic>?;
-
-        if (updatedData != null) {
-          setState(() {
-            _batsmanId = updatedData['batsmanId'] ?? _batsmanId;
-            _bowlerId = updatedData['bowlerId'] ?? _bowlerId;
-            _ballCount = updatedData['ballCount'] ?? _ballCount;
-            _runsPlayer1 = updatedData['runsPlayer1'] ?? _runsPlayer1;
-            _runsPlayer2 = updatedData['runsPlayer2'] ?? _runsPlayer2;
-            _p1Choice = updatedData['p1Choice'] ?? _p1Choice;
-            _p2Choice = updatedData['p2Choice'] ?? _p2Choice;
-            _status = updatedData['status'] ?? _status;
-          });
-        }
+        _player1Id = roomData['player1Id'] ?? '';
+        _player2Id = roomData['player2Id'] ?? '';
+        _ballCount = roomData['ballCount'] ?? 0;
+        _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+        _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
       });
+
+      _startGameListener();
     } else {
-      devtools.log('Room does not exist');
+      devtools.log('Room not found');
     }
   }
 
-  Future<void> _startTurns() async {
-    if (_batsmanId.isNotEmpty && _bowlerId.isNotEmpty) {
-      await _turn1();
-      _checkWinner();
-    }
-  }
-
-  Future<void> _turn1() async {
-    if (_player1Id == _batsmanId) {
-      _showBatting();
-    } else {
-      _showBalling();
-    }
-    while (_ballCount > 0 && _status != 'out') {
-      await _makeChoice(_p1Choice);
-    }
-    _ballCount <= 0 ? _swapRoles() : _handleOut();
-    if (_player1Id == _batsmanId) {
-      _showBatting();
-    } else {
-      _showBalling();
-    }
-    while (_ballCount > 0 && _status != 'out') {
-      await _makeChoice(_p1Choice);
-    }
-  }
-
-  Future<void> _makeChoice(String choice) async {
-    setState(() {
-      _isChoosing = true;
-    });
-
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-    final currentUserId = _auth.currentUser!.uid;
-
-    if (currentUserId == _player1Id) {
-      await roomRef.update({'p1Choice': choice});
-    }
-
-    // Timer to enforce a 5-second limit for choice selection
-    // ignore: prefer_const_constructors
-    Timer timer = Timer(Duration(seconds: 5), () async {
-      final snapshot = await roomRef.get();
-      final data = snapshot.value as Map<dynamic, dynamic>;
-
-      await roomRef.update({'p1Choice': (Random().nextInt(6) + 1).toString()});
-    });
-    // Listen for changes in p1Choice and p2Choice
-    roomRef.onValue.listen((event) async {
+  void _startGameListener() {
+    roomSubscription = roomRef.onValue.listen((event) {
       final data = event.snapshot.value as Map<dynamic, dynamic>;
-      final p1Choice = data['p1Choice'];
-      final p2Choice = data['p2Choice'];
-      if (p1Choice != null && p2Choice != null) {
-        // Once both choices are made, resolve them
-        timer
-            .cancel(); // Cancel the timer if both choices are made within 5 seconds
-        _resolveChoices(p1Choice, p2Choice);
 
-        // Stop listening once choices are resolved
-        roomRef.onValue.listen(null).cancel();
+      if (data != null) {
+        setState(() {
+          _p1Choice = data['p1Choice'];
+          _p2Choice = data['p2Choice'];
+          _batsmanId = data['batsmanId'];
+          _bowlerId = data['bowlerId'];
+          _ballCount = data['ballCount'];
+          _runsPlayer1 = data['runsPlayer1'] ?? _runsPlayer1;
+          _runsPlayer2 = data['runsPlayer2'] ?? _runsPlayer2;
+        });
+
+        _turn1();
       }
     });
   }
 
-  void _resolveChoices(String p1Choice, String p2Choice) async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
+  void _turn1() {
+    if (_ballCount > 0) {
+      devtools.log('Turn 1 started');
+      _startChoiceTimer();
+    } else {
+      devtools.log('Game over');
+      _endTurn1();
+    }
+  }
 
-    bool isOut = (p1Choice == p2Choice);
+  void _startChoiceTimer() {
+    // Cancel any existing timer to avoid multiple timers running simultaneously
+    _choiceTimer?.cancel();
 
-    if (isOut) {
-      _status = 'out';
+    _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
+      devtools.log('timer ended after 4 seconds');
+      if (_p1Choice == null || _p2Choice == null) {
+        devtools.log('Assigning random choices');
+        _assignRandomChoices();
+      }
+      _endChoiceSelection();
+    });
+  }
+
+  void _assignRandomChoices() async {
+    if (_p1Choice == null) {
+      devtools.log('Assigning random choice for player 1');
+      _p1Choice = (Random().nextInt(6) + 1).toString();
+      await roomRef.update({'p1Choice': _p1Choice});
+    }
+
+    if (_p2Choice == null) {
+      devtools.log('Assigning random choice for player 2');
+      _p2Choice = (Random().nextInt(6) + 1).toString();
+      await roomRef.update({'p2Choice': _p2Choice});
+    }
+  }
+
+  void _endChoiceSelection() {
+    // Cancel the timer to prevent random assignment after choice is made
+    _choiceTimer?.cancel();
+
+    // If both choices are made, proceed to comparison
+    someFunction();
+  }
+
+  void _compareChoices(String p1Choice, String p2Choice) async {
+    devtools.log('Comparing choices: $p1Choice, $p2Choice');
+    if (p1Choice == p2Choice) {
+      devtools.log('Both players chose the same number');
+      // Both players chose the same number, no runs scored
       await roomRef.update({
-        'status': 'out',
-        'ballCount': _ballCount,
         'p1Choice': null,
         'p2Choice': null,
       });
-      if (_player1Id == _batsmanId) {
-        await roomRef.update({
-          'runsPlayer1': _runsPlayer1,
-        });
-      }
+      _endTurn1();
     } else {
-      if (_player1Id == _batsmanId) {
-        int runs = _runsPlayer1;
-        runs += int.parse(_p1Choice);
-        _ballCount--;
-      }
-      await roomRef.update({
-        'runsPlayer1': runs,
-        'ballCount': _ballCount,
-        'p1Choice': null,
-        'status': _ballCount <= 0 ? 'waiting' : 'in_progress',
-      });
-    }
-
-    setState(() {
-      _isChoosing = false;
-      _selectedButton = '';
-    });
-  }
-
-  void _handleOut() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-
-    // Check who is currently the batsman and swap roles
-
-    // Update the role swap in Firebase
-    await roomRef.update({
-      'batsmanId': _bowlerId,
-      'bowlerId': _batsmanId,
-      'ballCount': _totalBalls, // Reset ball count for the new batsman
-      'status': 'in_progress',
-    });
-
-    // Update the local state
-    setState(() {
-      String temp = _batsmanId;
-      _batsmanId = _bowlerId;
-      _bowlerId = temp;
-      _ballCount = _totalBalls;
-    });
-
-    // Show role swap dialog or notification
-    _showRoleSwapDialog();
-
-    // Reset player choices after role swap
-    await roomRef.update({
-      'p1Choice': null,
-    });
-
-    setState(() {
-      _isChoosing = false;
-      _selectedButton = '';
-    });
-  }
-
-  void _swapRoles() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-
-    // Swap the batsman and bowler IDs
-    String newBatsmanId = _bowlerId;
-    String newBowlerId = _batsmanId;
-
-    // Update Firebase with the new roles and reset the ball count
-    await roomRef.update({
-      'batsmanId': newBatsmanId,
-      'bowlerId': newBowlerId,
-      'ballCount': _totalBalls, // Reset ball count for the new innings
-      'status': 'in_progress',
-    });
-
-    // Update the local state
-    setState(() {
-      _batsmanId = newBatsmanId;
-      _bowlerId = newBowlerId;
-      _ballCount = _totalBalls;
-    });
-
-    // Reset choices after the role swap
-    await roomRef.update({
-      'p1Choice': null,
-    });
-
-    // Notify the players about the role swap
-    _showRoleSwapDialog();
-  }
-
-  void _showRoleSwapDialog() {
-    // Show the dialog after a 3-second delay
-    Timer(Duration(seconds: 3), () {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          // Another timer to automatically close the dialog after 3 seconds
-          Timer(Duration(seconds: 3), () {
-            Navigator.of(context).pop(); // Close the dialog
-          });
-
-          return AlertDialog(
-            title: const Text("Role Swap"),
-            content:
-                const Text("Roles have been swapped. You are now the bowler."),
-            actions: [
-              TextButton(
-                child: const Text("OK"),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog manually
-                },
-              ),
-            ],
-          );
-        },
-      );
-    });
-  }
-
-  Future<void> _showBatting() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible:
-          false, // User cannot dismiss the dialog by tapping outside
-      builder: (BuildContext context) {
-        // Automatically close the dialog after 3 seconds
-        Future.delayed(const Duration(seconds: 3), () {
-          Navigator.of(context).pop(); // Dismiss the dialog
+      devtools.log('Choices are different');
+      if (_batsmanId == _player1Id) {
+        int runs = int.parse(p1Choice);
+        await roomRef.update({
+          'p1Choice': null,
+          'p2Choice': null,
+          'runsPlayer1': _runsPlayer1 + runs,
         });
-
-        return const AlertDialog(
-          title: Text('Batting'),
-          content: Text('You are now batting!'),
-        );
-      },
-    );
-  }
-
-  Future<void> _showBalling() async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible:
-          false, // User cannot dismiss the dialog by tapping outside
-      builder: (BuildContext context) {
-        // Automatically close the dialog after 3 seconds
-        Future.delayed(const Duration(seconds: 3), () {
-          Navigator.of(context).pop(); // Dismiss the dialog
+      } else if (_batsmanId == _player2Id) {
+        int runs = int.parse(p2Choice);
+        await roomRef.update({
+          'runsPlayer2': _runsPlayer2 + runs,
+          'p1Choice': null,
+          'p2Choice': null
         });
-
-        return const AlertDialog(
-          title: Text('Balling'),
-          content: Text('You are now balling!'),
-        );
-      },
-    );
-  }
-
-  Future<void> _checkWinner() async {
-    final roomRef = _database.ref('rooms/${widget.roomId}');
-    final roomSnapshot = await roomRef.get();
-
-    if (roomSnapshot.exists) {
-      final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
-      final int runsPlayer1 = roomData['runsPlayer1'] ?? 0;
-      final int runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-
-      String message = '';
-
-      if (runsPlayer1 > runsPlayer2) {
-        message = 'Player 1 Wins!';
-        await _updateWinLoss(_player1Id, _player2Id);
-      } else if (runsPlayer2 > runsPlayer1) {
-        message = 'Player 2 Wins!';
-        await _updateWinLoss(_player2Id, _player1Id);
-      } else {
-        message = 'The match is a DRAW';
       }
 
-      _showWinnerDialog(message);
+      if (_currentUserId == _batsmanId) {
+        await roomRef.update({
+          'ballCount': _ballCount - 1,
+        });
+      }
     }
 
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.of(context).pop(); // Pop GameScreen after showing the winner
+    setState(() {
+      devtools.log('ballcount is now ${_ballCount - 1}');
+      _p1Choice = null;
+      _p2Choice = null;
+      _ballCount -= 1;
+    });
+
+    _turn1();
+  }
+
+  void _endTurn1() {
+    devtools.log('Turn 1 ended');
+    // Proceed to the next phase of the game or determine the winner
+    Navigator.pop(context);
+  }
+
+  void someFunction() {
+    // Your existing code
+    Timer(Duration(seconds: 2), () {
+      if (_p1Choice != null && _p2Choice != null) {
+        _compareChoices(_p1Choice!, _p2Choice!);
+      }
     });
   }
 
-  Future<void> _updateWinLoss(String winnerId, String loserId) async {
-    final winnerRef = _database.ref('players/$winnerId');
-    final loserRef = _database.ref('players/$loserId');
-
-    final winnerSnapshot = await winnerRef.get();
-    final loserSnapshot = await loserRef.get();
-
-    if (winnerSnapshot.exists && loserSnapshot.exists) {
-      final winnerData = winnerSnapshot.value as Map<dynamic, dynamic>;
-      final loserData = loserSnapshot.value as Map<dynamic, dynamic>;
-
-      final int wins = winnerData['wins'] ?? 0;
-      final int losses = loserData['losses'] ?? 0;
-
-      await winnerRef.update({'wins': wins + 1});
-      await loserRef.update({'losses': losses + 1});
+  Future<void> _makeChoice(String choice) async {
+    // Prevent multiple choices by checking if the choice is already set
+    if (_currentUserId == _batsmanId && _p1Choice == null) {
+      devtools.log('Batsman making choice: $choice');
+      await roomRef.update({'p1Choice': choice});
+    } else if (_currentUserId == _bowlerId && _p2Choice == null) {
+      devtools.log('Baller making choice: $choice');
+      await roomRef.update({'p2Choice': choice});
     }
-  }
 
-  void _showWinnerDialog(String message) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false, // User must tap a button to dismiss
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Game Over'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Return to Home'),
-              onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              },
-            ),
-          ],
-        );
-      },
-    );
+    setState(() {
+      _selectedButton = null;
+    });
+    _endChoiceSelection(); // Ensure the choice process ends after making a choice
   }
 
   @override
   Widget build(BuildContext context) {
+    String displayText = _currentUserId == _batsmanId ? 'BATTING' : 'BALLING';
     return Scaffold(
       backgroundColor: const Color(0xFF212121),
       body: Stack(
@@ -436,14 +233,14 @@ class _Player1State extends State<Player1> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Player1: $_runsPlayer1',
+                    'P1: $_runsPlayer1',
                     style: const TextStyle(
                       fontSize: 24,
                       color: Colors.white,
                     ),
                   ),
                   Text(
-                    'Player2: $_runsPlayer2',
+                    'P2: $_runsPlayer2',
                     style: const TextStyle(
                       fontSize: 24,
                       color: Colors.white,
@@ -479,6 +276,11 @@ class _Player1State extends State<Player1> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Text(
+                    displayText,
+                    style: const TextStyle(
+                        fontSize: 32, color: Color.fromARGB(255, 44, 117, 5)),
+                  ),
                   const Text(
                     'Make your choice:',
                     style: TextStyle(fontSize: 24, color: Colors.white),
@@ -520,17 +322,13 @@ class _Player1State extends State<Player1> {
 
   Widget _buildChoiceButton(String value) {
     final isSelected = _selectedButton == value;
-
     return GestureDetector(
-      onTap: _isChoosing
-          ? null
-          : () {
-              setState(() {
-                _selectedButton = value;
-                _isChoosing = true; // Disable buttons while processing
-              });
-              _makeChoice(value);
-            },
+      onTap: () {
+        setState(() {
+          _selectedButton = value;
+        });
+        _makeChoice(value);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         decoration: BoxDecoration(
@@ -548,4 +346,5 @@ class _Player1State extends State<Player1> {
       ),
     );
   }
-}*/
+}
+*/

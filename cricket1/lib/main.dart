@@ -1,3 +1,4 @@
+import 'package:cricket1/pages/loggedin/l_homepage.dart';
 import 'package:cricket1/pages/loggedin/match/game.dart';
 import 'package:cricket1/pages/login_view.dart';
 import 'package:cricket1/pages/register_view.dart';
@@ -13,30 +14,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /*return Scaffold(
-      appBar: AppBar(
-        title: Center(
-          child: Text('HOME'),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(25),
-          child: FutureBuilder(
-              future: Firebase.initializeApp(
-                options: DefaultFirebaseOptions.currentPlatform,
-              ),
-              builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.done:
-                    return LoginView();
-                  default:
-                    return const Text('LOADING...');
-                }
-              }),
-        ),
-      ),
-    );*/
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Cricket Cricket',
@@ -49,6 +26,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginView(),
         '/register': (context) => const RegisterView(),
+        '/home': (context) => const HomePage(),
         '/game': (context) {
           final String roomId =
               ModalRoute.of(context)!.settings.arguments as String;

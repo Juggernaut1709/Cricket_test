@@ -16,12 +16,14 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late DatabaseReference roomRef;
+  late DatabaseReference userRef;
   late StreamSubscription roomSubscription;
   Timer? _choiceTimer;
 
+  bool _isTurn1Active = true;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   late String _currentUserId;
-
+  late String temp;
   late String _batsmanId;
   late String _bowlerId;
   late String _player1Id;
@@ -29,6 +31,10 @@ class _GameScreenState extends State<GameScreen> {
   int _ballCount = 0;
   int _runsPlayer1 = 0;
   int _runsPlayer2 = 0;
+  int turn = 1;
+  late int _wins;
+  late int _losses;
+  late int _draws;
   String? _p1Choice;
   String? _p2Choice;
   String? _selectedButton;
@@ -50,172 +56,377 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _initializeGame() async {
-    roomRef = FirebaseDatabase.instance.ref('rooms/${widget.roomId}');
-    final roomSnapshot = await roomRef.get();
+    try {
+      roomRef = FirebaseDatabase.instance.ref('rooms/${widget.roomId}');
+      userRef = FirebaseDatabase.instance.ref('users/$_currentUserId');
+      final roomSnapshot = await roomRef.get();
+      final userSnapshot = await userRef.get();
 
-    if (roomSnapshot.exists) {
-      final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
+      if (userSnapshot.exists) {
+        final userData = userSnapshot.value as Map<dynamic, dynamic>;
 
-      setState(() {
-        _batsmanId = roomData['batsmanId'] ?? '';
-        _bowlerId = roomData['bowlerId'] ?? '';
-        _player1Id = roomData['player1Id'] ?? '';
-        _player2Id = roomData['player2Id'] ?? '';
-        _ballCount = roomData['ballCount'] ?? 0;
-        _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
-        _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
-      });
+        devtools.log('User data: $_wins, $_losses, $_draws');
 
-      _startGameListener();
-    } else {
-      devtools.log('Room not found');
+        setState(() {
+          _wins = userData['wins'] ?? 0;
+          _losses = userData['losses'] ?? 0;
+          _draws = userData['draws'] ?? 0;
+        });
+      }
+
+      if (roomSnapshot.exists) {
+        final roomData = roomSnapshot.value as Map<dynamic, dynamic>;
+
+        devtools.log('Room data: $roomData');
+
+        setState(() {
+          _batsmanId = roomData['batsmanId'] ?? '';
+          _bowlerId = roomData['bowlerId'] ?? '';
+          _player1Id = roomData['player1Id'] ?? '';
+          _player2Id = roomData['player2Id'] ?? '';
+          _ballCount = roomData['ballCount'] ?? 0;
+          _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
+          _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
+        });
+
+        _startGameListener();
+      } else {
+        devtools.log('Room not found');
+      }
+    } catch (e) {
+      devtools.log('Error: $e');
     }
   }
 
   void _startGameListener() {
-    roomSubscription = roomRef.onValue.listen((event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>;
+    try {
+      roomSubscription = roomRef.onValue.listen((event) {
+        final data = event.snapshot.value as Map<dynamic, dynamic>;
 
-      if (data != null) {
-        setState(() {
-          _p1Choice = data['p1Choice'];
-          _p2Choice = data['p2Choice'];
-          _batsmanId = data['batsmanId'];
-          _bowlerId = data['bowlerId'];
-          _ballCount = data['ballCount'];
-          _runsPlayer1 = data['runsPlayer1'] ?? _runsPlayer1;
-          _runsPlayer2 = data['runsPlayer2'] ?? _runsPlayer2;
-        });
+        if (data != null) {
+          setState(() {
+            _p1Choice = data['p1Choice'];
+            _p2Choice = data['p2Choice'];
+            _batsmanId = data['batsmanId'];
+            _bowlerId = data['bowlerId'];
+            _ballCount = data['ballCount'];
+            _runsPlayer1 = data['runsPlayer1'] ?? _runsPlayer1;
+            _runsPlayer2 = data['runsPlayer2'] ?? _runsPlayer2;
+          });
 
-        _turn1();
-      }
-    });
+          _turn1();
+        }
+      });
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
   }
 
   void _turn1() {
-    if (_ballCount > 0) {
-      devtools.log('Turn 1 started');
-      _startChoiceTimer();
-    } else {
-      devtools.log('Game over');
-      _endTurn1();
+    try {
+      if (!_isTurn1Active) return;
+      if (_ballCount > 0) {
+        devtools.log('Turn 1 started');
+        _startChoiceTimer();
+      } else {
+        devtools.log('Game over');
+        _endTurn1();
+      }
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
+  }
+
+  void _turn2() {
+    try {
+      if (_ballCount > 0) {
+        devtools.log('Turn 2 started');
+        _startChoiceTimer();
+      } else {
+        devtools.log('Game over');
+        _endTurn2();
+      }
+    } catch (e) {
+      devtools.log('Error: $e');
     }
   }
 
   void _startChoiceTimer() {
-    // Cancel any existing timer to avoid multiple timers running simultaneously
-    _choiceTimer?.cancel();
+    try {
+      // Cancel any existing timer to avoid multiple timers running simultaneously
+      _choiceTimer?.cancel();
 
-    _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
-      devtools.log('timer ended after 4 seconds');
-      if (_p1Choice == null || _p2Choice == null) {
-        devtools.log('Assigning random choices');
-        _assignRandomChoices();
-      }
-      _endChoiceSelection();
-    });
+      _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
+        devtools.log('timer ended after 4 seconds');
+        if (_p1Choice == null || _p2Choice == null) {
+          devtools.log('Assigning random choices');
+          _assignRandomChoices();
+        }
+        _endChoiceSelection();
+      });
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
   }
 
   void _assignRandomChoices() async {
-    if (_p1Choice == null) {
-      devtools.log('Assigning random choice for player 1');
-      _p1Choice = (Random().nextInt(6) + 1).toString();
-      await roomRef.update({'p1Choice': _p1Choice});
-    }
+    try {
+      if (_p1Choice == null) {
+        devtools.log('Assigning random choice for player 1');
+        _p1Choice = (Random().nextInt(6) + 1).toString();
+        await roomRef.update({'p1Choice': _p1Choice});
+      }
 
-    if (_p2Choice == null) {
-      devtools.log('Assigning random choice for player 2');
-      _p2Choice = (Random().nextInt(6) + 1).toString();
-      await roomRef.update({'p2Choice': _p2Choice});
+      if (_p2Choice == null) {
+        devtools.log('Assigning random choice for player 2');
+        _p2Choice = (Random().nextInt(6) + 1).toString();
+        await roomRef.update({'p2Choice': _p2Choice});
+      }
+    } catch (e) {
+      devtools.log('Error: $e');
     }
   }
 
   void _endChoiceSelection() {
-    // Cancel the timer to prevent random assignment after choice is made
-    _choiceTimer?.cancel();
+    try {
+      // Cancel the timer to prevent random assignment after choice is made
+      _choiceTimer?.cancel();
 
-    // If both choices are made, proceed to comparison
-    someFunction();
+      // If both choices are made, proceed to comparison
+      someFunction();
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
   }
 
   void _compareChoices(String p1Choice, String p2Choice) async {
-    devtools.log('Comparing choices: $p1Choice, $p2Choice');
-    if (p1Choice == p2Choice) {
-      devtools.log('Both players chose the same number');
-      // Both players chose the same number, no runs scored
-      await roomRef.update({
-        'p1Choice': null,
-        'p2Choice': null,
-      });
-      _endTurn1();
-    } else {
-      devtools.log('Choices are different');
-      if (_batsmanId == _player1Id) {
-        int runs = int.parse(p1Choice);
+    try {
+      devtools.log('Comparing choices: $p1Choice, $p2Choice');
+      if (p1Choice == p2Choice) {
+        devtools.log('Both players chose the same number');
+        // Both players chose the same number, no runs scored
         await roomRef.update({
           'p1Choice': null,
           'p2Choice': null,
-          'runsPlayer1': _runsPlayer1 + runs,
         });
-      } else if (_batsmanId == _player2Id) {
-        int runs = int.parse(p2Choice);
-        await roomRef.update({
-          'runsPlayer2': _runsPlayer2 + runs,
-          'p1Choice': null,
-          'p2Choice': null
-        });
+        if (turn == 1) {
+          _endTurn1();
+        } else {
+          _endTurn2();
+        }
+      } else {
+        devtools.log('Choices are different');
+        if (_batsmanId == _player1Id) {
+          int runs = int.parse(p1Choice);
+          await roomRef.update({
+            'p1Choice': null,
+            'p2Choice': null,
+            'runsPlayer1': _runsPlayer1 + runs,
+          });
+        } else if (_batsmanId == _player2Id) {
+          int runs = int.parse(p2Choice);
+          await roomRef.update({
+            'runsPlayer2': _runsPlayer2 + runs,
+            'p1Choice': null,
+            'p2Choice': null
+          });
+        }
+
+        if (_currentUserId == _batsmanId) {
+          await roomRef.update({
+            'ballCount': _ballCount - 1,
+          });
+        }
       }
 
-      if (_currentUserId == _batsmanId) {
-        await roomRef.update({
-          'ballCount': _ballCount - 1,
-        });
+      setState(() {
+        devtools.log('ballcount is now ${_ballCount - 1}');
+        _p1Choice = null;
+        _p2Choice = null;
+        _ballCount -= 1;
+      });
+
+      if (turn == 1) {
+        _turn1();
+      } else {
+        _turn2();
       }
+    } catch (e) {
+      devtools.log('Error: $e');
     }
-
-    setState(() {
-      devtools.log('ballcount is now ${_ballCount - 1}');
-      _p1Choice = null;
-      _p2Choice = null;
-      _ballCount -= 1;
-    });
-
-    _turn1();
   }
 
-  void _endTurn1() {
-    devtools.log('Turn 1 ended');
-    // Proceed to the next phase of the game or determine the winner
-    Navigator.pop(context);
+  void _endTurn1() async {
+    try {
+      devtools.log('Turn 1 ended');
+      // Proceed to the next phase of the game or determine the winner
+      //Navigator.pop(context);
+      _isTurn1Active = false;
+
+      await roomRef.update({
+        'batsmanId': _bowlerId,
+        'bowlerId': _batsmanId,
+      });
+      setState(() {
+        temp = _batsmanId;
+        _batsmanId = _bowlerId;
+        _bowlerId = temp;
+        _isTurn1Active = false;
+      });
+
+      turn = 2;
+      _isTurn1Active = false;
+      Future.delayed(Duration(seconds: 2), () {
+        _turn2();
+      });
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
+  }
+
+  void _endTurn2() async {
+    try {
+      devtools.log('Turn 2 ended');
+      // Determine the winner of the game
+      if (_runsPlayer1 > _runsPlayer2) {
+        if (_player1Id == _currentUserId) {
+          _wins += 1;
+          _showWinnerDialog();
+        } else {
+          _losses += 1;
+          _showLoserDialog();
+        }
+      } else if (_runsPlayer2 > _runsPlayer1) {
+        if (_player2Id == _currentUserId) {
+          _wins += 1;
+          _showWinnerDialog();
+        } else {
+          _losses += 1;
+          _showLoserDialog();
+        }
+      } else {
+        _draws += 1;
+        _showDrawDialog();
+      }
+
+      await userRef.update({
+        'wins': _wins,
+        'losses': _losses,
+        'draws': _draws,
+      });
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
   }
 
   void someFunction() {
-    // Your existing code
-    Timer(Duration(seconds: 2), () {
-      if (_p1Choice != null && _p2Choice != null) {
-        _compareChoices(_p1Choice!, _p2Choice!);
-      }
-    });
+    try {
+      // Your existing code
+      Timer(Duration(seconds: 2), () {
+        if (_p1Choice != null && _p2Choice != null) {
+          _compareChoices(_p1Choice!, _p2Choice!);
+        }
+      });
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
   }
 
   Future<void> _makeChoice(String choice) async {
-    // Prevent multiple choices by checking if the choice is already set
-    if (_currentUserId == _batsmanId && _p1Choice == null) {
-      devtools.log('Batsman making choice: $choice');
-      await roomRef.update({'p1Choice': choice});
-    } else if (_currentUserId == _bowlerId && _p2Choice == null) {
-      devtools.log('Baller making choice: $choice');
-      await roomRef.update({'p2Choice': choice});
-    }
+    try {
+      // Prevent multiple choices by checking if the choice is already set
+      if (_currentUserId == _player1Id && _p1Choice == null) {
+        devtools.log('Batsman making choice: $choice');
+        await roomRef.update({'p1Choice': choice});
+      } else if (_currentUserId == _player2Id && _p2Choice == null) {
+        devtools.log('Baller making choice: $choice');
+        await roomRef.update({'p2Choice': choice});
+      }
 
-    setState(() {
-      _selectedButton = null;
-    });
-    _endChoiceSelection(); // Ensure the choice process ends after making a choice
+      setState(() {
+        _selectedButton = null;
+      });
+      _endChoiceSelection(); // Ensure the choice process ends after making a choice
+    } catch (e) {
+      devtools.log('Error: $e');
+    }
+  }
+
+  void _showWinnerDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Congratulations!'),
+          content: const Text('You won the game!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (route) => false);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLoserDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Better luck next time!'),
+          content: const Text('You lost the game!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (route) => false);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDrawDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('It\'s a draw!'),
+          content: const Text('The game ended in a draw!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (route) => false);
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_batsmanId == null || _bowlerId == null) {
+      // Return a loading indicator or placeholder while the IDs are being initialized
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     String displayText = _currentUserId == _batsmanId ? 'BATTING' : 'BALLING';
     return Scaffold(
       backgroundColor: const Color(0xFF212121),
