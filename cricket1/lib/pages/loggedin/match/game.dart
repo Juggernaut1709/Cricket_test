@@ -135,9 +135,7 @@ class _GameScreenState extends State<GameScreen> {
     _choiceTimer?.cancel();
 
     // If both choices are made, proceed to comparison
-    if (_p1Choice != null && _p2Choice != null) {
-      _compareChoices(_p1Choice!, _p2Choice!);
-    }
+    someFunction();
   }
 
   void _compareChoices(String p1Choice, String p2Choice) async {
@@ -191,6 +189,15 @@ class _GameScreenState extends State<GameScreen> {
     Navigator.pop(context);
   }
 
+  void someFunction() {
+    // Your existing code
+    Timer(Duration(seconds: 2), () {
+      if (_p1Choice != null && _p2Choice != null) {
+        _compareChoices(_p1Choice!, _p2Choice!);
+      }
+    });
+  }
+
   Future<void> _makeChoice(String choice) async {
     // Prevent multiple choices by checking if the choice is already set
     if (_currentUserId == _batsmanId && _p1Choice == null) {
@@ -201,6 +208,9 @@ class _GameScreenState extends State<GameScreen> {
       await roomRef.update({'p2Choice': choice});
     }
 
+    setState(() {
+      _selectedButton = null;
+    });
     _endChoiceSelection(); // Ensure the choice process ends after making a choice
   }
 
