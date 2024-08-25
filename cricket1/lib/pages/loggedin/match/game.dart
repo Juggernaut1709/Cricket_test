@@ -53,8 +53,14 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _choiceTimer?.cancel();
     roomSubscription.cancel();
-    roomRef.remove();
+    _removeRoom();
     super.dispose();
+  }
+
+  void _removeRoom() {
+    Future.delayed(const Duration(seconds: 5), () {
+      roomRef.remove();
+    });
   }
 
   void _setupPlayerPresence(String roomId, String playerId) {
@@ -294,7 +300,14 @@ class _GameScreenState extends State<GameScreen> {
       if (turn == 1) {
         _turn1();
       } else {
-        _turn2();
+        String batsmanId = _batsmanId;
+        if (batsmanId == _player1Id && _runsPlayer1 > _runsPlayer2) {
+          _endTurn2();
+        } else if (batsmanId == _player2Id && _runsPlayer2 > _runsPlayer1) {
+          _endTurn2();
+        } else {
+          _turn2();
+        }
       }
     } catch (e) {
       devtools.log('Error: $e');
@@ -473,7 +486,6 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     if (_batsmanId == null || _bowlerId == null) {
-      // Return a loading indicator or placeholder while the IDs are being initialized
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -482,33 +494,44 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    String displayText = _currentUserId == _batsmanId ? 'BATTING' : 'BALLING';
+    String displayText = _currentUserId == _batsmanId ? 'BATTING' : 'BOWLING';
+
+    // Determine the labels based on the current user ID
+    String userLabel = 'USR';
+    String opponentLabel = 'OPP';
+
+    // Determine the scores to display based on the current user ID
+    String userScore =
+        _currentUserId == _player1Id ? '$_runsPlayer1' : '$_runsPlayer2';
+    String opponentScore =
+        _currentUserId == _player2Id ? '$_runsPlayer1' : '$_runsPlayer2';
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(11, 42, 33, 1.0),
       body: Stack(
         children: [
           Positioned(
-            top: 0,
+            top: 20,
             left: 20,
             right: 20,
             height: 100,
             child: Container(
-              color: const Color(0xFF326050),
+              color: const Color.fromRGBO(11, 42, 33, 1.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'P1: $_runsPlayer1',
+                    '$userLabel: $userScore',
                     style: const TextStyle(
                       fontSize: 24,
-                      color: Colors.white,
+                      color: Color.fromRGBO(213, 206, 163, 1.0),
                     ),
                   ),
                   Text(
-                    'P2: $_runsPlayer2',
+                    '$opponentLabel: $opponentScore',
                     style: const TextStyle(
                       fontSize: 24,
-                      color: Colors.white,
+                      color: Color.fromRGBO(213, 206, 163, 1.0),
                     ),
                   ),
                 ],
@@ -522,41 +545,39 @@ class _GameScreenState extends State<GameScreen> {
             bottom: 0,
             child: Container(
               padding: const EdgeInsets.all(20.0),
-              color: const Color(0xFF505050),
+              color: const Color.fromRGBO(11, 42, 33, 1.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     displayText,
                     style: const TextStyle(
-                        fontSize: 32,
-                        color: Color.fromARGB(255, 213, 206, 163)),
-                  ),
-                  const Text(
-                    'Make your choice:',
-                    style: TextStyle(fontSize: 24, color: Colors.white),
+                      fontSize: 32,
+                      color: Color.fromARGB(255, 213, 206, 163),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      Container(
+                        height: 50,
+                        color: Color.fromRGBO(11, 42, 33, 1.0),
+                      ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildChoiceButton('1'),
-                          const SizedBox(width: 10),
                           _buildChoiceButton('2'),
-                          const SizedBox(width: 10),
                           _buildChoiceButton('3'),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildChoiceButton('4'),
-                          const SizedBox(width: 10),
                           _buildChoiceButton('5'),
-                          const SizedBox(width: 10),
                           _buildChoiceButton('6'),
                         ],
                       ),
@@ -581,19 +602,23 @@ class _GameScreenState extends State<GameScreen> {
         _makeChoice(value);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color.fromRGBO(60, 42, 33, 1)
-              : Color.fromARGB(255, 213, 206, 163),
-          borderRadius: BorderRadius.circular(8.0),
+              : const Color.fromARGB(255, 213, 206, 163),
+          shape: BoxShape.circle,
         ),
-        child: Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 1, 12, 20),
+        width: 90,
+        height: 90,
+        child: Center(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 1, 12, 20),
+            ),
           ),
         ),
       ),
