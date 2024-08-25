@@ -29,6 +29,8 @@ class _JoinRoomState extends State<JoinRoom> {
     final roomId = _roomIdController.text.trim();
     userRef = FirebaseDatabase.instance.ref('users/$player2Id');
 
+    final userSnapshot = await userRef.get();
+
     if (roomId.isEmpty) {
       setState(() {
         _errorMessage = 'Please enter a room ID.';
@@ -64,6 +66,15 @@ class _JoinRoomState extends State<JoinRoom> {
       'player2Id': user?.uid,
       'status': 'in_progress',
     });
+
+    if (!userSnapshot.exists) {
+      // If the user's data does not exist, initialize it
+      await userRef.set({
+        'wins': 0,
+        'losses': 0,
+        'draws': 0,
+      });
+    }
 
     // Navigate to the game screen
     // ignore: use_build_context_synchronously

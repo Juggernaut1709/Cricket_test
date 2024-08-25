@@ -32,12 +32,13 @@ class _GameScreenState extends State<GameScreen> {
   int _runsPlayer1 = 0;
   int _runsPlayer2 = 0;
   int turn = 1;
-  late int _wins;
-  late int _losses;
-  late int _draws;
+  late int _wins = 0;
+  late int _losses = 0;
+  late int _draws = 0;
   String? _p1Choice;
   String? _p2Choice;
   String? _selectedButton;
+  bool _isGameActive = true;
 
   static const int choiceDuration = 4;
 
@@ -46,13 +47,24 @@ class _GameScreenState extends State<GameScreen> {
     super.initState();
     _currentUserId = _auth.currentUser!.uid;
     _initializeGame();
+    startListening();
   }
 
   @override
   void dispose() {
     _choiceTimer?.cancel();
     roomSubscription.cancel();
+    roomRef.remove();
     super.dispose();
+  }
+
+  void _setupPlayerPresence(String roomId, String playerId) {
+    DatabaseReference playerPresenceRef = FirebaseDatabase.instance
+        .ref('rooms/$roomId/players/$playerId/presence');
+
+    // Update the presence to 'online' when the player is connected
+    playerPresenceRef.set('online');
+    playerPresenceRef.onDisconnect().set('offline');
   }
 
   Future<void> _initializeGame() async {
@@ -89,6 +101,8 @@ class _GameScreenState extends State<GameScreen> {
           _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
         });
 
+        onPlayerJoin(widget.roomId, _currentUserId);
+
         _startGameListener();
       } else {
         devtools.log('Room not found');
@@ -96,6 +110,18 @@ class _GameScreenState extends State<GameScreen> {
     } catch (e) {
       devtools.log('Error: $e');
     }
+  }
+
+  void onPlayerJoin(String roomId, String playerId) {
+    // Set player as online
+    final playerRef = FirebaseDatabase.instance.ref('rooms/$roomId/$playerId');
+
+    playerRef
+        .onDisconnect()
+        .remove(); // Remove the player from the room on disconnect
+
+    // Set initial status as online
+    playerRef.set({"status": "online"});
   }
 
   void _startGameListener() {
@@ -120,6 +146,44 @@ class _GameScreenState extends State<GameScreen> {
     } catch (e) {
       devtools.log('Error: $e');
     }
+  }
+
+  void startListening() {
+    roomRef.onValue.listen((event) {
+      if (event.snapshot.value != null) {
+        Map roomData = event.snapshot.value as Map;
+
+        if (roomData['player1Id'] == null || roomData['player2Id'] == null) {
+          // If either player is null, close the room
+          closeRoom(
+              widget.roomId, roomData['player1Id'], roomData['player2Id']);
+        }
+      }
+    });
+  }
+
+  void closeRoom(String roomId, String player1Id, String player2Id) {
+    // Determine which player left
+    String winnerId = player1Id != null ? player1Id : player2Id;
+    String loserId = player1Id == null ? player2Id : player1Id;
+
+    // Update player records
+    if (winnerId != null) {
+      FirebaseDatabase.instance
+          .ref('players/$winnerId/wins')
+          .set(ServerValue.increment(1));
+    }
+    if (loserId != null) {
+      FirebaseDatabase.instance
+          .ref('players/$loserId/losses')
+          .set(ServerValue.increment(1));
+    }
+
+    // Close the room
+    FirebaseDatabase.instance.ref('rooms/$roomId').remove();
+
+    // Force navigation to home
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   void _turn1() {
@@ -154,16 +218,18 @@ class _GameScreenState extends State<GameScreen> {
   void _startChoiceTimer() {
     try {
       // Cancel any existing timer to avoid multiple timers running simultaneously
-      _choiceTimer?.cancel();
+      if (_isGameActive) {
+        _choiceTimer?.cancel();
 
-      _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
-        devtools.log('timer ended after 4 seconds');
-        if (_p1Choice == null || _p2Choice == null) {
-          devtools.log('Assigning random choices');
-          _assignRandomChoices();
-        }
-        _endChoiceSelection();
-      });
+        _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
+          devtools.log('timer ended after 4 seconds');
+          if (_p1Choice == null || _p2Choice == null) {
+            devtools.log('Assigning random choices');
+            _assignRandomChoices();
+          }
+          _endChoiceSelection();
+        });
+      }
     } catch (e) {
       devtools.log('Error: $e');
     }
@@ -286,25 +352,35 @@ class _GameScreenState extends State<GameScreen> {
 
   void _endTurn2() async {
     try {
+      _isGameActive = false;
       devtools.log('Turn 2 ended');
+      devtools.log('player1: $_runsPlayer1');
+      devtools.log('player2: $_runsPlayer2');
       // Determine the winner of the game
+      String winnerId;
+      String loserId;
       if (_runsPlayer1 > _runsPlayer2) {
-        if (_player1Id == _currentUserId) {
+        winnerId = _player1Id;
+        loserId = _player2Id;
+        if (winnerId == _currentUserId) {
           _wins += 1;
           _showWinnerDialog();
-        } else {
+        } else if (loserId == _currentUserId) {
           _losses += 1;
           _showLoserDialog();
         }
       } else if (_runsPlayer2 > _runsPlayer1) {
-        if (_player2Id == _currentUserId) {
+        winnerId = _player2Id;
+        loserId = _player1Id;
+        if (winnerId == _currentUserId) {
           _wins += 1;
           _showWinnerDialog();
-        } else {
+        } else if (loserId == _currentUserId) {
           _losses += 1;
           _showLoserDialog();
         }
       } else {
+        // It's a draw
         _draws += 1;
         _showDrawDialog();
       }

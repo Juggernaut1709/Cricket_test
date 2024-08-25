@@ -48,6 +48,8 @@ class _CreateRoomState extends State<CreateRoom> {
     roomRef = FirebaseDatabase.instance.ref('rooms/$roomId');
     userRef = FirebaseDatabase.instance.ref('users/$player1Id');
 
+    final userSnapshot = await userRef.get();
+
     // Set initial room data
     await roomRef.set({
       'player1Id': player1Id,
@@ -64,6 +66,15 @@ class _CreateRoomState extends State<CreateRoom> {
       'status': 'waiting',
       'totalBalls': widget.balls,
     });
+
+    if (!userSnapshot.exists) {
+      // If the user's data does not exist, initialize it
+      await userRef.set({
+        'wins': 0,
+        'losses': 0,
+        'draws': 0,
+      });
+    }
 
     // Set loading to false after room creation
     setState(() {
