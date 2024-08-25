@@ -28,7 +28,6 @@ class _GameScreenState extends State<GameScreen> {
   late String _bowlerId;
   late String _player1Id;
   late String _player2Id;
-  int _ballCount = 0;
   int _runsPlayer1 = 0;
   int _runsPlayer2 = 0;
   int turn = 1;
@@ -96,7 +95,6 @@ class _GameScreenState extends State<GameScreen> {
           _bowlerId = roomData['bowlerId'] ?? '';
           _player1Id = roomData['player1Id'] ?? '';
           _player2Id = roomData['player2Id'] ?? '';
-          _ballCount = roomData['ballCount'] ?? 0;
           _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
           _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
         });
@@ -135,7 +133,6 @@ class _GameScreenState extends State<GameScreen> {
             _p2Choice = data['p2Choice'];
             _batsmanId = data['batsmanId'];
             _bowlerId = data['bowlerId'];
-            _ballCount = data['ballCount'];
             _runsPlayer1 = data['runsPlayer1'] ?? _runsPlayer1;
             _runsPlayer2 = data['runsPlayer2'] ?? _runsPlayer2;
           });
@@ -189,13 +186,8 @@ class _GameScreenState extends State<GameScreen> {
   void _turn1() {
     try {
       if (!_isTurn1Active) return;
-      if (_ballCount > 0) {
-        devtools.log('Turn 1 started');
-        _startChoiceTimer();
-      } else {
-        devtools.log('Game over');
-        _endTurn1();
-      }
+      devtools.log('Turn 1 started');
+      _startChoiceTimer();
     } catch (e) {
       devtools.log('Error: $e');
     }
@@ -203,13 +195,8 @@ class _GameScreenState extends State<GameScreen> {
 
   void _turn2() {
     try {
-      if (_ballCount > 0) {
-        devtools.log('Turn 2 started');
-        _startChoiceTimer();
-      } else {
-        devtools.log('Game over');
-        _endTurn2();
-      }
+      devtools.log('Turn 2 started');
+      _startChoiceTimer();
     } catch (e) {
       devtools.log('Error: $e');
     }
@@ -221,7 +208,7 @@ class _GameScreenState extends State<GameScreen> {
       if (_isGameActive) {
         _choiceTimer?.cancel();
 
-        _choiceTimer = Timer(Duration(seconds: choiceDuration), () {
+        _choiceTimer = Timer(const Duration(seconds: choiceDuration), () {
           devtools.log('timer ended after 4 seconds');
           if (_p1Choice == null || _p2Choice == null) {
             devtools.log('Assigning random choices');
@@ -297,19 +284,11 @@ class _GameScreenState extends State<GameScreen> {
             'p2Choice': null
           });
         }
-
-        if (_currentUserId == _batsmanId) {
-          await roomRef.update({
-            'ballCount': _ballCount - 1,
-          });
-        }
       }
 
       setState(() {
-        devtools.log('ballcount is now ${_ballCount - 1}');
         _p1Choice = null;
         _p2Choice = null;
-        _ballCount -= 1;
       });
 
       if (turn == 1) {
@@ -342,7 +321,7 @@ class _GameScreenState extends State<GameScreen> {
 
       turn = 2;
       _isTurn1Active = false;
-      Future.delayed(Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () {
         _turn2();
       });
     } catch (e) {
@@ -398,7 +377,7 @@ class _GameScreenState extends State<GameScreen> {
   void someFunction() {
     try {
       // Your existing code
-      Timer(Duration(seconds: 2), () {
+      Timer(const Duration(seconds: 2), () {
         if (_p1Choice != null && _p2Choice != null) {
           _compareChoices(_p1Choice!, _p2Choice!);
         }
@@ -505,7 +484,7 @@ class _GameScreenState extends State<GameScreen> {
 
     String displayText = _currentUserId == _batsmanId ? 'BATTING' : 'BALLING';
     return Scaffold(
-      backgroundColor: const Color(0xFF212121),
+      backgroundColor: const Color.fromRGBO(11, 42, 33, 1.0),
       body: Stack(
         children: [
           Positioned(
@@ -537,21 +516,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
           Positioned(
-            top: 100,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: Container(
-              color: const Color(0xFF505050),
-              child: Center(
-                child: Text(
-                  'Balls left: $_ballCount',
-                  style: const TextStyle(fontSize: 24, color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
             top: 200,
             left: 0,
             right: 0,
@@ -565,7 +529,8 @@ class _GameScreenState extends State<GameScreen> {
                   Text(
                     displayText,
                     style: const TextStyle(
-                        fontSize: 32, color: Color.fromARGB(255, 44, 117, 5)),
+                        fontSize: 32,
+                        color: Color.fromARGB(255, 213, 206, 163)),
                   ),
                   const Text(
                     'Make your choice:',
@@ -618,7 +583,9 @@ class _GameScreenState extends State<GameScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.amber : const Color(0xFF76bed0),
+          color: isSelected
+              ? const Color.fromRGBO(60, 42, 33, 1)
+              : Color.fromARGB(255, 213, 206, 163),
           borderRadius: BorderRadius.circular(8.0),
         ),
         child: Text(
@@ -626,7 +593,7 @@ class _GameScreenState extends State<GameScreen> {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF02111b),
+            color: Color.fromARGB(255, 1, 12, 20),
           ),
         ),
       ),

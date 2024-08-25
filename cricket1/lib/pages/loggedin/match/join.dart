@@ -85,16 +85,16 @@ class _JoinRoomState extends State<JoinRoom> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(33, 33, 33, 1),
+        backgroundColor: const Color.fromARGB(255, 26, 18, 11),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back,
-              color: Color.fromRGBO(20, 255, 236, 1)),
+              color: Color.fromARGB(255, 213, 206, 163)),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         title: const Text('Join Room',
-            style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1))),
+            style: TextStyle(color: Color.fromARGB(255, 213, 206, 163))),
       ),
       body: Center(
         child: Padding(
@@ -108,13 +108,14 @@ class _JoinRoomState extends State<JoinRoom> {
                   labelText: 'Enter Room ID',
                   border: OutlineInputBorder(),
                 ),
+                style: const TextStyle(color: Colors.white),
                 keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isJoining ? null : joinRoom,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(13, 115, 119, 1),
+                  backgroundColor: const Color.fromARGB(255, 213, 206, 163),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                   shape: RoundedRectangleBorder(
@@ -138,7 +139,7 @@ class _JoinRoomState extends State<JoinRoom> {
           ),
         ),
       ),
-      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+      backgroundColor: const Color.fromRGBO(11, 42, 33, 1.0),
     );
   }
 }

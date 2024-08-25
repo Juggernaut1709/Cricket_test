@@ -38,24 +38,21 @@ class _RegisterViewState extends State<RegisterView> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           // Firebase is initialized, show the registration form
-          return Scaffold(
-            backgroundColor:
-                Color(0xFF212121), // Dark Gray for the overall background
-            body: Stack(
+          return Material(
+            color: const Color.fromRGBO(
+                11, 42, 33, 1.0), // Dark Gray for the overall background
+            child: Stack(
               children: [
                 // Top curved background design
                 Positioned(
-                  top: -50,
+                  top: -250,
                   left: 0,
-                  right: 0,
+                  right: -100,
                   child: Container(
-                    height: 300,
+                    height: 450,
                     decoration: BoxDecoration(
-                      color: Color(0xFF0D7377), // Teal
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(150),
-                        bottomRight: Radius.circular(150),
-                      ),
+                      color: Color.fromRGBO(213, 206, 163, 1.0), // Teal
+                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
@@ -67,92 +64,9 @@ class _RegisterViewState extends State<RegisterView> {
                     width: 300,
                     height: 300,
                     decoration: BoxDecoration(
-                      color: Color(0xFF141414), // Very Dark Gray
+                      color:
+                          Color.fromRGBO(229, 229, 203, 1.0), // Very Dark Gray
                       shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                // Cricket ball design
-                Positioned(
-                  top: 200,
-                  left: 30,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Color(0xFF14FFEC), // Aqua for the ball
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        // Stitches
-                        Center(
-                          child: Container(
-                            height: 12,
-                            width: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                          ),
-                        ),
-                        // Small white dots
-                        Positioned(
-                          top: 20,
-                          left: 20,
-                          child: Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 50,
-                          left: 60,
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 20,
-                          right: 20,
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 50,
-                          right: 60,
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -164,162 +78,196 @@ class _RegisterViewState extends State<RegisterView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SizedBox(height: 120),
+                          SizedBox(height: 190),
                           Text(
                             'REGISTER',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF0D7377), // Teal
-                              fontSize: 36,
+                              color: Color.fromRGBO(213, 206, 163, 1.0), // Teal
+                              fontSize: 40,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           SizedBox(height: 40),
-                          TextField(
-                            controller: emailController,
-                            decoration: InputDecoration(
-                              hintText: 'Email',
-                              filled: true,
-                              fillColor: Color.fromARGB(255, 255, 255, 255)
-                                  .withOpacity(0.2), // Very Dark Gray
-                              prefixIcon:
-                                  Icon(Icons.email, color: Color(0xFF0D7377)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 20, horizontal: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(
+                                  213, 206, 163, 1.0), // Beige
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            keyboardType: TextInputType.emailAddress,
+                            child: TextField(
+                              controller: emailController,
+                              decoration: InputDecoration(
+                                hintText: 'Email',
+                                filled: true,
+                                fillColor: Colors.transparent, // Very Dark Gray
+                                prefixIcon: Icon(Icons.email,
+                                    color: Color.fromRGBO(26, 18, 11, 1.0)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 20, horizontal: 20),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                            ),
                           ),
                           SizedBox(height: 20),
-                          TextField(
-                            controller: passwordController,
-                            decoration: InputDecoration(
-                              hintText: 'Password',
-                              filled: true,
-                              fillColor: Color.fromARGB(255, 255, 255, 255)
-                                  .withOpacity(0.2), // Very Dark Gray
-                              prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xFF0D7377)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 20, horizontal: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(
+                                  213, 206, 163, 1.0), // Beige
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            obscureText: true,
-                            enableSuggestions: false,
-                            autocorrect: false,
+                            child: TextField(
+                              controller: passwordController,
+                              decoration: InputDecoration(
+                                hintText: 'Password',
+                                filled: true,
+                                fillColor: Colors.transparent, // Very Dark Gray
+                                prefixIcon: Icon(Icons.lock,
+                                    color: Color.fromRGBO(26, 18, 11, 1.0)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 20, horizontal: 20),
+                              ),
+                              obscureText: true,
+                              enableSuggestions: false,
+                              autocorrect: false,
+                            ),
                           ),
                           SizedBox(height: 20),
-                          TextField(
-                            controller: confirmPasswordController,
-                            decoration: InputDecoration(
-                              hintText: 'Confirm Password',
-                              filled: true,
-                              fillColor: Color.fromARGB(255, 255, 255, 255)
-                                  .withOpacity(0.2), // Very Dark Gray
-                              prefixIcon:
-                                  Icon(Icons.lock, color: Color(0xFF0D7377)),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 20, horizontal: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(
+                                  213, 206, 163, 1.0), // Beige
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            obscureText: true,
-                            enableSuggestions: false,
-                            autocorrect: false,
+                            child: TextField(
+                              controller: confirmPasswordController,
+                              decoration: InputDecoration(
+                                hintText: 'Confirm Password',
+                                filled: true,
+                                fillColor: Colors.transparent, // Very Dark Gray
+                                prefixIcon: Icon(Icons.lock,
+                                    color: Color.fromRGBO(26, 18, 11, 1.0)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 20, horizontal: 20),
+                              ),
+                              obscureText: true,
+                              enableSuggestions: false,
+                              autocorrect: false,
+                            ),
                           ),
                           SizedBox(height: 40),
-                          TextButton(
-                            onPressed: () async {
-                              final email = emailController.text;
-                              final pword = passwordController.text;
-                              // Check if the passwords match
-                              if (passwordController.text !=
-                                  confirmPasswordController.text) {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return const AlertDialog(
-                                      title: Text('Password Mismatch'),
-                                      content: Text(
-                                          'The passwords do not match. Please try again.'),
-                                    );
-                                  },
-                                );
-                              } else {
-                                try {
-                                  final userCredential = await FirebaseAuth
-                                      .instance
-                                      .createUserWithEmailAndPassword(
-                                          email: email, password: pword);
-                                  print(userCredential);
-                                  await userCredential.user!
-                                      .sendEmailVerification();
-                                  // Navigate to LoginView after successful registration
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const LoginView()),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(
+                                  26, 18, 11, 1.0), // Darker Brown
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: TextButton(
+                              onPressed: () async {
+                                final email = emailController.text;
+                                final pword = passwordController.text;
+                                // Check if the passwords match
+                                if (passwordController.text !=
+                                    confirmPasswordController.text) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return const AlertDialog(
+                                        title: Text('Password Mismatch'),
+                                        content: Text(
+                                            'The passwords do not match. Please try again.'),
+                                      );
+                                    },
                                   );
-                                } on FirebaseAuthException catch (e) {
-                                  if (e.code == 'weak-password') {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return const AlertDialog(
-                                          title: Text('Weak Password'),
-                                          content: Text(
-                                              "The password you've created is weak. Create a stronger password."),
-                                        );
-                                      },
+                                } else {
+                                  try {
+                                    final userCredential = await FirebaseAuth
+                                        .instance
+                                        .createUserWithEmailAndPassword(
+                                            email: email, password: pword);
+                                    print(userCredential);
+                                    await userCredential.user!
+                                        .sendEmailVerification();
+                                    // Navigate to LoginView after successful registration
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginView()),
                                     );
-                                  } else if (e.code == 'email-already-in-use') {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return const AlertDialog(
-                                          title: Text('Email already in use'),
-                                          content: Text(
-                                              "The Email you've provided is already in use. Try giving another Email."),
-                                        );
-                                      },
-                                    );
-                                  } else if (e.code == 'invalid-email') {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return const AlertDialog(
-                                          title: Text('Invalid Email'),
-                                          content: Text(
-                                              "The Email you've provided is invalid. Try giving another Email."),
-                                        );
-                                      },
-                                    );
+                                  } on FirebaseAuthException catch (e) {
+                                    if (e.code == 'weak-password') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return const AlertDialog(
+                                            title: Text('Weak Password'),
+                                            content: Text(
+                                                "The password you've created is weak. Create a stronger password."),
+                                          );
+                                        },
+                                      );
+                                    } else if (e.code ==
+                                        'email-already-in-use') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return const AlertDialog(
+                                            title: Text('Email already in use'),
+                                            content: Text(
+                                                "The Email you've provided is already in use. Try giving another Email."),
+                                          );
+                                        },
+                                      );
+                                    } else if (e.code == 'invalid-email') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return const AlertDialog(
+                                            title: Text('Invalid Email'),
+                                            content: Text(
+                                                "The Email you've provided is invalid. Try giving another Email."),
+                                          );
+                                        },
+                                      );
+                                    }
                                   }
                                 }
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              backgroundColor: Color(0xFF0D7377), // Teal
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                padding: const EdgeInsets.all(0),
                               ),
-                            ),
-                            child: Text(
-                              'Register',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                              child: Container(
+                                width: double.infinity,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(
+                                      26, 18, 11, 1.0), // Darker Brown
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Text(
+                                  'Register',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -329,7 +277,10 @@ class _RegisterViewState extends State<RegisterView> {
                               Navigator.pushNamed(context, '/login');
                             },
                             child: const Text(
-                                "Already have an account? Login here."),
+                                "Already have an account? Login here.",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                )),
                           ),
                           SizedBox(
                               height:

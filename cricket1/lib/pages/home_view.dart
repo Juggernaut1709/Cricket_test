@@ -1,3 +1,4 @@
+/*
 import 'package:cricket1/pages/login_view.dart';
 import 'package:cricket1/pages/register_view.dart';
 import 'package:flutter/material.dart';
@@ -156,3 +157,4 @@ class HomeView extends StatelessWidget {
     );
   }
 }
+*/

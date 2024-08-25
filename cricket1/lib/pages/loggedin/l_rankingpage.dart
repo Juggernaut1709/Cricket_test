@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 
 class RankingPage extends StatefulWidget {
   const RankingPage({Key? key}) : super(key: key);
@@ -11,122 +10,106 @@ class RankingPage extends StatefulWidget {
 }
 
 class _RankingPageState extends State<RankingPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
-  late String _currentUserId;
-  int _wins = 0;
-  int _losses = 0;
+  late Future<Map<String, dynamic>> _rankingData;
 
   @override
   void initState() {
     super.initState();
-    _currentUserId = _auth.currentUser!.uid;
-    _fetchUserStats();
+    _rankingData = _fetchRankingData();
   }
 
-  Future<void> _fetchUserStats() async {
-    final userRef = _database.ref('players/$_currentUserId');
-    final snapshot = await userRef.get();
-    final data = snapshot.value as Map<dynamic, dynamic>?;
+  Future<Map<String, dynamic>> _fetchRankingData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
 
-    setState(() {
-      _wins = data?['wins'] ?? 0;
-      _losses = data?['losses'] ?? 0;
-    });
+    if (userId != null) {
+      final ref = FirebaseDatabase.instance.ref('users/$userId');
+      final snapshot = await ref.get();
+
+      if (snapshot.exists) {
+        return Map<String, dynamic>.from(snapshot.value as Map);
+      }
+    }
+    return {};
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(33, 33, 33, 1),
-        title: const Text('Ranking',
-            style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1))),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              'Wins and Losses',
-              style: TextStyle(
-                  fontSize: 24,
+        title: const Center(
+            child: Text('RANKING',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 26, 18, 11),
+                  fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  color: Color.fromRGBO(20, 255, 236, 1)),
-            ),
-            const SizedBox(height: 20),
-            Expanded(child: _buildBarChart()),
-          ],
-        ),
+                ))),
+        backgroundColor: const Color.fromARGB(255, 213, 206, 163),
       ),
-      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _rankingData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Error fetching data'));
+          } else {
+            final data = snapshot.data ?? {};
+            final wins = data['wins'] ?? 0;
+            final losses = data['losses'] ?? 0;
+            final draws = data['draws'] ?? 0;
+
+            return Container(
+              color: const Color.fromRGBO(11, 42, 33, 1.0),
+              child: Center(
+                // Center widget to center the column
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Adjust to content size
+                  children: [
+                    _buildStatCard(
+                        'Wins', wins, Color.fromARGB(255, 111, 78, 62)),
+                    const SizedBox(height: 20),
+                    _buildStatCard(
+                        'Losses', losses, Color.fromARGB(255, 57, 39, 24)),
+                    const SizedBox(height: 20),
+                    _buildStatCard(
+                        'Draws', draws, const Color.fromARGB(255, 26, 18, 11)),
+                  ],
+                ),
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 
-  Widget _buildBarChart() {
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: (_wins > _losses ? _wins : _losses).toDouble() +
-            1, // Add a little padding to the top
-        titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 1, // This determines the interval of the titles
-                getTitlesWidget: (value, meta) {
-                  final titles = ['Wins', 'Losses'];
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      titles[value.toInt()],
-                      style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1)),
-                    ),
-                  );
-                },
-              ),
+  Widget _buildStatCard(String title, int value, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color.fromARGB(255, 213, 206, 163),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 1, // This determines the interval of the titles
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(
-                      value.toInt().toString(),
-                      style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1)),
-                    ),
-                  );
-                },
-              ),
-            )),
-        borderData: FlBorderData(
-          show: false,
-        ),
-        barGroups: [
-          BarChartGroupData(
-            x: 0,
-            barRods: [
-              BarChartRodData(
-                toY: _wins.toDouble(),
-                color: Colors.green,
-                width: 30,
-              ),
-            ],
           ),
-          BarChartGroupData(
-            x: 1,
-            barRods: [
-              BarChartRodData(
-                toY: _losses.toDouble(),
-                color: Colors.red,
-                width: 30,
-              ),
-            ],
+          const SizedBox(height: 10),
+          Text(
+            value.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

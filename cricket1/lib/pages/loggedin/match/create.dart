@@ -4,11 +4,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
 
 class CreateRoom extends StatefulWidget {
-  final int balls;
-
   const CreateRoom({
     Key? key,
-    required this.balls, // Accept balls as a required parameter
   }) : super(key: key);
 
   @override
@@ -56,7 +53,6 @@ class _CreateRoomState extends State<CreateRoom> {
       'player2Id': null,
       'batsmanId': null,
       'bowlerId': null,
-      'ballCount': widget.balls,
       'runsPlayer1': 0,
       'runsPlayer2': 0,
       'batsmanChoice': null,
@@ -64,7 +60,6 @@ class _CreateRoomState extends State<CreateRoom> {
       'p1Choice': null,
       'p2Choice': null,
       'status': 'waiting',
-      'totalBalls': widget.balls,
     });
 
     if (!userSnapshot.exists) {
@@ -119,32 +114,79 @@ class _CreateRoomState extends State<CreateRoom> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(33, 33, 33, 1),
+        backgroundColor: const Color.fromARGB(255, 26, 18, 11),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back,
-              color: Color.fromRGBO(20, 255, 236, 1)),
+              color: Color.fromARGB(255, 213, 206, 163)),
           onPressed: () {
             Navigator.pop(context);
+            // Remove the room when the user leaves the page
+            roomRef.remove();
           },
         ),
         title: const Text('Create Room',
-            style: TextStyle(color: Color.fromRGBO(20, 255, 236, 1))),
+            style: TextStyle(color: Color.fromARGB(255, 213, 206, 163))),
       ),
-      body: Center(
-        child: isLoading
-            ? CircularProgressIndicator(
-                color: const Color.fromRGBO(13, 115, 119, 1))
-            : Text(
-                'Room ID: $roomId\nWaiting for another player to join...',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color.fromRGBO(13, 115, 119, 1),
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      body: Stack(
+        children: [
+          Positioned(
+            top: 50,
+            left: 30,
+            child: _buildCircle(70, const Color.fromARGB(255, 213, 206, 163)),
+          ),
+          Positioned(
+            top: 150,
+            right: 50,
+            child: _buildCircle(50, const Color.fromARGB(255, 229, 229, 203)),
+          ),
+          Positioned(
+            bottom: 200,
+            left: 40,
+            child: _buildCircle(90, const Color.fromARGB(255, 213, 206, 163)),
+          ),
+          Positioned(
+            bottom: 100,
+            right: 30,
+            child: _buildCircle(60, const Color.fromARGB(255, 229, 229, 203)),
+          ),
+          Positioned(
+            top: 300,
+            left: 150,
+            child: _buildCircle(40, const Color.fromARGB(255, 213, 206, 163)),
+          ),
+          Positioned(
+            bottom: 50,
+            left: 150,
+            child: _buildCircle(50, const Color.fromARGB(255, 213, 206, 163)),
+          ),
+          Center(
+            child: isLoading
+                ? CircularProgressIndicator(
+                    color: const Color.fromARGB(255, 213, 206, 163))
+                : Text(
+                    'Room ID: $roomId\nWaiting for another player to join...',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color.fromARGB(255, 213, 206, 163),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ],
       ),
-      backgroundColor: const Color.fromRGBO(50, 50, 50, 1),
+      backgroundColor: const Color.fromRGBO(11, 42, 33, 1.0),
+    );
+  }
+
+  Widget _buildCircle(double diameter, Color color) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
     );
   }
 }
