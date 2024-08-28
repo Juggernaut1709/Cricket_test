@@ -46,7 +46,6 @@ class _GameScreenState extends State<GameScreen> {
     super.initState();
     _currentUserId = _auth.currentUser!.uid;
     _initializeGame();
-    startListening();
   }
 
   @override
@@ -61,15 +60,6 @@ class _GameScreenState extends State<GameScreen> {
     Future.delayed(const Duration(seconds: 5), () {
       roomRef.remove();
     });
-  }
-
-  void _setupPlayerPresence(String roomId, String playerId) {
-    DatabaseReference playerPresenceRef = FirebaseDatabase.instance
-        .ref('rooms/$roomId/players/$playerId/presence');
-
-    // Update the presence to 'online' when the player is connected
-    playerPresenceRef.set('online');
-    playerPresenceRef.onDisconnect().set('offline');
   }
 
   Future<void> _initializeGame() async {
@@ -104,9 +94,6 @@ class _GameScreenState extends State<GameScreen> {
           _runsPlayer1 = roomData['runsPlayer1'] ?? 0;
           _runsPlayer2 = roomData['runsPlayer2'] ?? 0;
         });
-
-        onPlayerJoin(widget.roomId, _currentUserId);
-
         _startGameListener();
       } else {
         devtools.log('Room not found');
@@ -114,18 +101,6 @@ class _GameScreenState extends State<GameScreen> {
     } catch (e) {
       devtools.log('Error: $e');
     }
-  }
-
-  void onPlayerJoin(String roomId, String playerId) {
-    // Set player as online
-    final playerRef = FirebaseDatabase.instance.ref('rooms/$roomId/$playerId');
-
-    playerRef
-        .onDisconnect()
-        .remove(); // Remove the player from the room on disconnect
-
-    // Set initial status as online
-    playerRef.set({"status": "online"});
   }
 
   void _startGameListener() {
@@ -149,44 +124,6 @@ class _GameScreenState extends State<GameScreen> {
     } catch (e) {
       devtools.log('Error: $e');
     }
-  }
-
-  void startListening() {
-    roomRef.onValue.listen((event) {
-      if (event.snapshot.value != null) {
-        Map roomData = event.snapshot.value as Map;
-
-        if (roomData['player1Id'] == null || roomData['player2Id'] == null) {
-          // If either player is null, close the room
-          closeRoom(
-              widget.roomId, roomData['player1Id'], roomData['player2Id']);
-        }
-      }
-    });
-  }
-
-  void closeRoom(String roomId, String player1Id, String player2Id) {
-    // Determine which player left
-    String winnerId = player1Id != null ? player1Id : player2Id;
-    String loserId = player1Id == null ? player2Id : player1Id;
-
-    // Update player records
-    if (winnerId != null) {
-      FirebaseDatabase.instance
-          .ref('players/$winnerId/wins')
-          .set(ServerValue.increment(1));
-    }
-    if (loserId != null) {
-      FirebaseDatabase.instance
-          .ref('players/$loserId/losses')
-          .set(ServerValue.increment(1));
-    }
-
-    // Close the room
-    FirebaseDatabase.instance.ref('rooms/$roomId').remove();
-
-    // Force navigation to home
-    Navigator.pushReplacementNamed(context, '/home');
   }
 
   void _turn1() {
@@ -320,6 +257,31 @@ class _GameScreenState extends State<GameScreen> {
       // Proceed to the next phase of the game or determine the winner
       //Navigator.pop(context);
       _isTurn1Active = false;
+      _choiceTimer?.cancel();
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return const AlertDialog(
+            title: Text(
+              'OUT',
+              style: TextStyle(
+                fontSize: 24,
+                color: Colors.red,
+              ),
+            ),
+            content: Text(
+              'Swapping roles',
+              style: TextStyle(
+                fontSize: 18,
+              ),
+            ),
+          );
+        },
+      );
+      Future.delayed(const Duration(seconds: 3), () {
+        Navigator.pop(context);
+      });
 
       await roomRef.update({
         'batsmanId': _bowlerId,
@@ -334,9 +296,8 @@ class _GameScreenState extends State<GameScreen> {
 
       turn = 2;
       _isTurn1Active = false;
-      Future.delayed(const Duration(seconds: 2), () {
-        _turn2();
-      });
+      _choiceTimer?.cancel();
+      _turn2();
     } catch (e) {
       devtools.log('Error: $e');
     }

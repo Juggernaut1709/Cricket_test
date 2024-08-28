@@ -1,5 +1,5 @@
 import 'package:cricket1/pages/loggedin/l_rankingpage.dart';
-import 'package:cricket1/pages/loggedin/l_settingspage.dart';
+import 'package:cricket1/pages/loggedin/l_infopage.dart';
 import 'package:cricket1/pages/loggedin/match/create.dart';
 import 'package:cricket1/pages/loggedin/match/join.dart';
 import 'package:flutter/material.dart';
@@ -43,14 +43,13 @@ class _HomePageState extends State<HomePage> {
                         } else if (item == 1) {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => SettingsPage()),
+                            MaterialPageRoute(builder: (context) => InfoPage()),
                           );
                         } else if (item == 0) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => RankingPage()),
+                                builder: (context) => const RankingPage()),
                           );
                         }
                       },
@@ -73,10 +72,10 @@ class _HomePageState extends State<HomePage> {
                           value: 1,
                           child: Row(
                             children: const [
-                              Icon(Icons.settings,
+                              Icon(Icons.info,
                                   color: Color.fromRGBO(213, 206, 163, 1.0)),
                               SizedBox(width: 8),
-                              Text("Settings",
+                              Text("Info",
                                   style: TextStyle(
                                       color:
                                           Color.fromRGBO(213, 206, 163, 1.0))),

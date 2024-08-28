@@ -62,16 +62,15 @@ class _RankingPageState extends State<RankingPage> {
             return Container(
               color: const Color.fromRGBO(11, 42, 33, 1.0),
               child: Center(
-                // Center widget to center the column
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Adjust to content size
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildStatCard(
                         'Wins', wins, Color.fromARGB(255, 111, 78, 62)),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 40),
                     _buildStatCard(
                         'Losses', losses, Color.fromARGB(255, 57, 39, 24)),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 40),
                     _buildStatCard(
                         'Draws', draws, const Color.fromARGB(255, 26, 18, 11)),
                   ],
@@ -85,33 +84,39 @@ class _RankingPageState extends State<RankingPage> {
   }
 
   Widget _buildStatCard(String title, int value, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color.fromARGB(255, 213, 206, 163),
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    return SizedBox(
+      width: 150, // Fixed width
+      height: 150, // Fixed height
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+        padding:
+            const EdgeInsets.all(20), // Adjusted padding for smaller circle
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color.fromARGB(255, 213, 206, 163),
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value.toString(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 10),
+            Text(
+              value.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
