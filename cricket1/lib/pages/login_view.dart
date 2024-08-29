@@ -1,6 +1,7 @@
-import 'package:cricket1/pages/loggedin/l_homepage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:cricket1/constants/routes.dart';
+import 'package:cricket1/services/auth/auth_exp.dart';
+import 'package:cricket1/services/auth/auth_services.dart';
+import 'package:cricket1/services/dialog/dialog.dart';
 import 'package:flutter/material.dart';
 import 'dart:developer' as devtools show log;
 
@@ -25,10 +26,10 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: Firebase.initializeApp(),
+        future: AuthServices.firebase().initialize(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            final user = FirebaseAuth.instance.currentUser;
+            final user = AuthServices.firebase().currentUser;
             return Material(
               color: const Color.fromRGBO(11, 42, 33, 1.0), // Dark Brown
               child: Stack(
@@ -144,12 +145,13 @@ class _LoginViewState extends State<LoginView> {
                                   final email = emailController.text;
                                   final pword = passwordController.text;
                                   try {
-                                    final userCredential = await FirebaseAuth
-                                        .instance
-                                        .signInWithEmailAndPassword(
-                                            email: email, password: pword);
-                                    devtools.log(userCredential.user!.email!);
-                                    if (user?.emailVerified == false) {
+                                    final userCredential =
+                                        await AuthServices.firebase()
+                                            .signIn(email, pword);
+                                    final user =
+                                        AuthServices.firebase().currentUser;
+                                    devtools.log(userCredential.toString());
+                                    if (user?.isEmailVerified == false) {
                                       showDialog(
                                         // ignore: use_build_context_synchronously
                                         context: context,
@@ -163,41 +165,30 @@ class _LoginViewState extends State<LoginView> {
                                       );
                                     } else {
                                       // Navigate to HomePage after successful login
-                                      Navigator.pushReplacement(
-                                        // ignore: use_build_context_synchronously
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const HomePage()),
-                                      );
+                                      Navigator.pushNamedAndRemoveUntil(
+                                          // ignore: use_build_context_synchronously
+                                          context,
+                                          HomeRoute,
+                                          (route) => false);
                                     }
-                                  } on FirebaseAuthException catch (e) {
-                                    if (e.code == 'invalid-credential') {
-                                      showDialog(
-                                        // ignore: use_build_context_synchronously
-                                        context: context,
-                                        builder: (context) {
-                                          return const AlertDialog(
-                                            title: Text('Invalid Credentials'),
-                                            content: Text(
-                                                "The Email or Password provided is wrong. Try Again"),
-                                          );
-                                        },
-                                      );
-                                    }
-                                    if (e.code == 'channel-error') {
-                                      showDialog(
-                                        // ignore: use_build_context_synchronously
-                                        context: context,
-                                        builder: (context) {
-                                          return const AlertDialog(
-                                            title: Text('No value provided'),
-                                            content: Text(
-                                                "Please provide a valid Email and Password to login"),
-                                          );
-                                        },
-                                      );
-                                    }
+                                  } on InvalidCredentialsException {
+                                    await showErrorDialog(
+                                      context,
+                                      'Invalid Credentials',
+                                      'The email or password is incorrect',
+                                    );
+                                  } on InvalidEmailException {
+                                    await showErrorDialog(
+                                      context,
+                                      'Invalid Email',
+                                      'The email is invalid',
+                                    );
+                                  } on GeneralException catch (e) {
+                                    await showErrorDialog(
+                                      context,
+                                      'Error',
+                                      'An error occurred: ${e.message}',
+                                    );
                                   }
                                 },
                                 style: TextButton.styleFrom(
@@ -228,7 +219,8 @@ class _LoginViewState extends State<LoginView> {
                             TextButton(
                               onPressed: () {
                                 // Navigate to RegisterView
-                                Navigator.pushNamed(context, '/register');
+                                Navigator.pushNamedAndRemoveUntil(
+                                    context, RegisterRoute, (route) => false);
                               },
                               child: const Text(
                                   "Don't have an account? Register here",

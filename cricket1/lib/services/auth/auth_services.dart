@@ -1,10 +1,13 @@
 import 'auth_provider.dart';
+import 'firebase_auth_provider.dart';
 import 'auth_user.dart';
 
-class AuthServices {
+class AuthServices implements AuthProvider {
   final AuthProvider _authProvider;
 
   AuthServices(this._authProvider);
+
+  factory AuthServices.firebase() => AuthServices(FirebaseAuthProvider());
 
   AuthUser? get currentUser => _authProvider.currentUser;
 
@@ -34,4 +37,7 @@ class AuthServices {
   Future<void> sendEmailVerification() async {
     return _authProvider.sendEmailVerification();
   }
+
+  @override
+  Future<void> initialize() => _authProvider.initialize();
 }

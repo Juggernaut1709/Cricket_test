@@ -1,6 +1,9 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cricket1/constants/routes.dart';
+import 'package:cricket1/services/auth/auth_exp.dart';
+import 'package:cricket1/services/auth/auth_services.dart';
+import 'package:cricket1/services/dialog/dialog.dart';
 import 'package:flutter/material.dart';
+import 'dart:developer' as devtools;
 import 'login_view.dart'; // Import the LoginView
 
 class RegisterView extends StatefulWidget {
@@ -34,7 +37,7 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Firebase.initializeApp(),
+      future: AuthServices.firebase().initialize(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
           // Firebase is initialized, show the registration form
@@ -50,7 +53,7 @@ class _RegisterViewState extends State<RegisterView> {
                   right: -100,
                   child: Container(
                     height: 450,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Color.fromRGBO(213, 206, 163, 1.0), // Teal
                       shape: BoxShape.circle,
                     ),
@@ -63,7 +66,7 @@ class _RegisterViewState extends State<RegisterView> {
                   child: Container(
                     width: 300,
                     height: 300,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color:
                           Color.fromRGBO(229, 229, 203, 1.0), // Very Dark Gray
                       shape: BoxShape.circle,
@@ -78,8 +81,8 @@ class _RegisterViewState extends State<RegisterView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SizedBox(height: 190),
-                          Text(
+                          const SizedBox(height: 190),
+                          const Text(
                             'REGISTER',
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -88,7 +91,7 @@ class _RegisterViewState extends State<RegisterView> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 40),
+                          const SizedBox(height: 40),
                           Container(
                             decoration: BoxDecoration(
                               color: const Color.fromRGBO(
@@ -101,19 +104,19 @@ class _RegisterViewState extends State<RegisterView> {
                                 hintText: 'Email',
                                 filled: true,
                                 fillColor: Colors.transparent, // Very Dark Gray
-                                prefixIcon: Icon(Icons.email,
+                                prefixIcon: const Icon(Icons.email,
                                     color: Color.fromRGBO(26, 18, 11, 1.0)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 20),
                               ),
                               keyboardType: TextInputType.emailAddress,
                             ),
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Container(
                             decoration: BoxDecoration(
                               color: const Color.fromRGBO(
@@ -126,13 +129,13 @@ class _RegisterViewState extends State<RegisterView> {
                                 hintText: 'Password',
                                 filled: true,
                                 fillColor: Colors.transparent, // Very Dark Gray
-                                prefixIcon: Icon(Icons.lock,
+                                prefixIcon: const Icon(Icons.lock,
                                     color: Color.fromRGBO(26, 18, 11, 1.0)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 20),
                               ),
                               obscureText: true,
@@ -140,7 +143,7 @@ class _RegisterViewState extends State<RegisterView> {
                               autocorrect: false,
                             ),
                           ),
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
                           Container(
                             decoration: BoxDecoration(
                               color: const Color.fromRGBO(
@@ -153,13 +156,13 @@ class _RegisterViewState extends State<RegisterView> {
                                 hintText: 'Confirm Password',
                                 filled: true,
                                 fillColor: Colors.transparent, // Very Dark Gray
-                                prefixIcon: Icon(Icons.lock,
+                                prefixIcon: const Icon(Icons.lock,
                                     color: Color.fromRGBO(26, 18, 11, 1.0)),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                     vertical: 20, horizontal: 20),
                               ),
                               obscureText: true,
@@ -167,7 +170,7 @@ class _RegisterViewState extends State<RegisterView> {
                               autocorrect: false,
                             ),
                           ),
-                          SizedBox(height: 40),
+                          const SizedBox(height: 40),
                           Container(
                             decoration: BoxDecoration(
                               color: const Color.fromRGBO(
@@ -178,72 +181,47 @@ class _RegisterViewState extends State<RegisterView> {
                               onPressed: () async {
                                 final email = emailController.text;
                                 final pword = passwordController.text;
-                                // Check if the passwords match
-                                if (passwordController.text !=
-                                    confirmPasswordController.text) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return const AlertDialog(
-                                        title: Text('Password Mismatch'),
-                                        content: Text(
-                                            'The passwords do not match. Please try again.'),
-                                      );
-                                    },
+                                final cpword = confirmPasswordController.text;
+                                try {
+                                  final userCredential =
+                                      await AuthServices.firebase()
+                                          .signUp(email, pword, cpword);
+                                  print(userCredential);
+                                  AuthServices.firebase()
+                                      .sendEmailVerification();
+                                  // Navigate to LoginView after successful registration
+                                  Navigator.pushNamedAndRemoveUntil(
+                                      context, LoginRoute, (route) => false);
+                                } on EmailAlreadyInUseException {
+                                  showErrorDialog(
+                                    context,
+                                    'Email already in use',
+                                    'The email you entered is already in use. Please try again.',
                                   );
-                                } else {
-                                  try {
-                                    final userCredential = await FirebaseAuth
-                                        .instance
-                                        .createUserWithEmailAndPassword(
-                                            email: email, password: pword);
-                                    print(userCredential);
-                                    await userCredential.user!
-                                        .sendEmailVerification();
-                                    // Navigate to LoginView after successful registration
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginView()),
-                                    );
-                                  } on FirebaseAuthException catch (e) {
-                                    if (e.code == 'weak-password') {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return const AlertDialog(
-                                            title: Text('Weak Password'),
-                                            content: Text(
-                                                "The password you've created is weak. Create a stronger password."),
-                                          );
-                                        },
-                                      );
-                                    } else if (e.code ==
-                                        'email-already-in-use') {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return const AlertDialog(
-                                            title: Text('Email already in use'),
-                                            content: Text(
-                                                "The Email you've provided is already in use. Try giving another Email."),
-                                          );
-                                        },
-                                      );
-                                    } else if (e.code == 'invalid-email') {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return const AlertDialog(
-                                            title: Text('Invalid Email'),
-                                            content: Text(
-                                                "The Email you've provided is invalid. Try giving another Email."),
-                                          );
-                                        },
-                                      );
-                                    }
-                                  }
+                                } on WeakPasswordException {
+                                  showErrorDialog(
+                                    context,
+                                    'Weak password',
+                                    'The password you entered is too weak. Please try again.',
+                                  );
+                                } on InvalidEmailException {
+                                  showErrorDialog(
+                                    context,
+                                    'Invalid email',
+                                    'The email you entered is invalid. Please try again.',
+                                  );
+                                } on UserNotCreatedException {
+                                  showErrorDialog(
+                                    context,
+                                    'User not created',
+                                    'The user could not be created. Please try again.',
+                                  );
+                                } on GeneralException catch (e) {
+                                  showErrorDialog(
+                                    context,
+                                    'General exception',
+                                    'An exception occurred: ${e.message}',
+                                  );
                                 }
                               },
                               style: TextButton.styleFrom(
@@ -274,7 +252,8 @@ class _RegisterViewState extends State<RegisterView> {
                           TextButton(
                             onPressed: () {
                               // Navigate to LoginView
-                              Navigator.pushNamed(context, '/login');
+                              Navigator.pushNamedAndRemoveUntil(
+                                  context, LoginRoute, (route) => false);
                             },
                             child: const Text(
                                 "Already have an account? Login here.",

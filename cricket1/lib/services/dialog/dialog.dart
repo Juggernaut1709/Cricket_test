@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
 
-class CustomDialog extends StatelessWidget {
-  final String title;
-  final String message;
-
-  CustomDialog({required this.title, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () {
-            // Add your logic here
-            Navigator.of(context).pop();
-          },
-          child: Text('OK'),
-        ),
-      ],
-    );
-  }
+Future<void> showErrorDialog(
+    BuildContext context, String title, String message) async {
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          )
+        ],
+      );
+    },
+  );
 }

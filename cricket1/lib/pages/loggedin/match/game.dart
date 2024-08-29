@@ -258,7 +258,6 @@ class _GameScreenState extends State<GameScreen> {
       //Navigator.pop(context);
       _isTurn1Active = false;
       _choiceTimer?.cancel();
-
       showDialog(
         context: context,
         builder: (context) {

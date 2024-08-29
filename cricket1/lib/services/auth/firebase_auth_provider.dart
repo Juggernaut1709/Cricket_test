@@ -1,9 +1,11 @@
+import 'package:cricket1/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'auth_provider.dart';
 import 'auth_user.dart';
 import 'auth_exp.dart';
 import 'package:firebase_auth/firebase_auth.dart'
     show FirebaseAuth, FirebaseAuthException;
+import 'dart:developer' as devtools;
 
 class FirebaseAuthProvider implements AuthProvider {
   @override
@@ -30,6 +32,7 @@ class FirebaseAuthProvider implements AuthProvider {
       if (e.code == 'email-already-in-use') {
         throw EmailAlreadyInUseException();
       } else if (e.code == 'weak-password') {
+        devtools.log('Weak password');
         throw WeakPasswordException();
       } else if (e.code == 'invalid-email') {
         throw InvalidEmailException();
@@ -102,5 +105,13 @@ class FirebaseAuthProvider implements AuthProvider {
     } else {
       return null;
     }
+  }
+
+  @override
+  Future<void> initialize() async {
+    // TODO: implement initialize
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 }

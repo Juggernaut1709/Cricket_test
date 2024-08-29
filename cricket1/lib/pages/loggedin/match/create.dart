@@ -1,3 +1,4 @@
+import 'package:cricket1/constants/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -107,7 +108,8 @@ class _CreateRoomState extends State<CreateRoom> {
       'status': 'in_progress'
     });
 
-    Navigator.pushReplacementNamed(context, '/game', arguments: roomId);
+    Navigator.pushNamedAndRemoveUntil(context, GameRoute, (route) => false,
+        arguments: roomId);
   }
 
   @override

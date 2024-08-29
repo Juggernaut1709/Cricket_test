@@ -10,4 +10,6 @@ class AuthUser {
   factory AuthUser.fromFirebaseUser(User user) {
     return AuthUser(isEmailVerified: user.emailVerified);
   }
+
+  sendEmailVerification() {}
 }
